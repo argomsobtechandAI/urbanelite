@@ -5,6 +5,9 @@ import { useNavigation } from '@react-navigation/native';
 import { ArrowLeft, Camera, Mail, Phone, MapPin, Briefcase, FileText, Layers } from 'lucide-react-native';
 import { Theme } from '../../theme';
 import { userAPI } from '../../services/api';
+import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
+import { storageService } from '../../services/storage';
+import { Platform, PermissionsAndroid } from 'react-native';
 
 const VendorPersonalInformationScreen = () => {
     const navigation = useNavigation();
@@ -15,8 +18,10 @@ const VendorPersonalInformationScreen = () => {
         phone: '',
         location: '',
         taxId: '',
-        serviceCategory: ''
+        serviceCategory: '',
+        profileImageUrl: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'
     });
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
     useEffect(() => {
         loadProfile();
@@ -33,12 +38,83 @@ const VendorPersonalInformationScreen = () => {
                 phone: response.data.phone || '',
                 location: response.data.location || '',
                 taxId: response.data.taxId || '',
-                serviceCategory: response.data.serviceCategory || ''
+                serviceCategory: response.data.serviceCategory || '',
+                profileImageUrl: response.data.profileImageUrl || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'
             });
         } catch (error) {
             console.error(error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const requestCameraPermission = async (): Promise<boolean> => {
+        if (Platform.OS !== 'android') return true;
+        try {
+            const granted = await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.CAMERA,
+                {
+                    title: 'Camera Permission',
+                    message: 'Allow access to camera to take a profile photo.',
+                    buttonNegative: 'Cancel',
+                    buttonPositive: 'OK',
+                }
+            );
+            return granted === PermissionsAndroid.RESULTS.GRANTED;
+        } catch {
+            return false;
+        }
+    };
+
+    const handleChangePhoto = () => {
+        Alert.alert('Change Profile Photo', 'Choose an option', [
+            {
+                text: 'Take Photo',
+                onPress: async () => {
+                    const hasPerm = await requestCameraPermission();
+                    if (!hasPerm) {
+                        Alert.alert('Permission Denied', 'Camera permission is required.');
+                        return;
+                    }
+                    const result = await launchCamera({ mediaType: 'photo', includeBase64: true, quality: 0.7 });
+                    if (!result.didCancel && result.assets?.[0]) handleUpload(result.assets[0]);
+                },
+            },
+            {
+                text: 'Choose from Gallery',
+                onPress: async () => {
+                    const result = await launchImageLibrary({ mediaType: 'photo', includeBase64: true, quality: 0.7 });
+                    if (!result.didCancel && result.assets?.[0]) handleUpload(result.assets[0]);
+                },
+            },
+            { text: 'Cancel', style: 'cancel' },
+        ]);
+    };
+
+    const handleUpload = async (asset: any) => {
+        if (!asset.base64) return;
+        setUploadingPhoto(true);
+        try {
+            const fileName = `profile_${Date.now()}.jpg`;
+            const uploadResult = await storageService.uploadFile(
+                'profile-images',
+                `vendors/${fileName}`,
+                asset.base64,
+                asset.type || 'image/jpeg'
+            );
+
+            if (uploadResult.error) {
+                Alert.alert('Upload Failed', uploadResult.error);
+                return;
+            }
+
+            await userAPI.updateProfile({ profileImageUrl: uploadResult.url });
+            setVendorData((prev: any) => ({ ...prev, profileImageUrl: uploadResult.url }));
+            Alert.alert('Success', 'Profile photo updated!');
+        } catch (err: any) {
+            Alert.alert('Error', err.message || 'Failed to upload photo');
+        } finally {
+            setUploadingPhoto(false);
         }
     };
 
@@ -77,11 +153,15 @@ const VendorPersonalInformationScreen = () => {
                 <View style={styles.avatarContainer}>
                     <View style={styles.avatarWrapper}>
                         <Image
-                            source={{ uri: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }}
+                            source={{ uri: vendorData.profileImageUrl }}
                             style={styles.avatar}
                         />
-                        <TouchableOpacity style={styles.cameraButton}>
-                            <Camera size={20} color="white" />
+                        <TouchableOpacity style={styles.cameraButton} onPress={handleChangePhoto} disabled={uploadingPhoto}>
+                            {uploadingPhoto ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <Camera size={20} color="white" />
+                            )}
                         </TouchableOpacity>
                     </View>
                 </View>

@@ -1,17 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '../../theme';
 import { vendorAPI } from '../../services/api';
-import { DollarSign, TrendingUp, CreditCard } from 'lucide-react-native';
+import { IndianRupee, TrendingUp, CreditCard } from 'lucide-react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 const VendorRevenueScreen = () => {
     const [loading, setLoading] = useState(true);
     const [revenueData, setRevenueData] = useState<any>(null);
 
-    useEffect(() => {
-        fetchRevenue();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            fetchRevenue();
+        }, [])
+    );
 
     const fetchRevenue = async () => {
         try {
@@ -39,14 +42,16 @@ const VendorRevenueScreen = () => {
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>Revenue & Earnings</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={styles.headerTitle}>Revenue & Earnings</Text>
+                    </View>
                     <Text style={styles.headerSubtitle}>Track your income</Text>
                 </View>
 
                 {/* Summary Cards */}
                 <View style={styles.summaryContainer}>
                     <View style={[styles.summaryCard, { backgroundColor: Theme.colors.brandOrange }]}>
-                        <DollarSign size={32} color="#FFF" />
+                        <IndianRupee size={32} color="#FFF" />
                         <Text style={styles.summaryValue}>{totalEarnings || '₹0'}</Text>
                         <Text style={styles.summaryLabel}>Total Earnings</Text>
                     </View>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { adminAPI } from '@/lib/api';
 import DashboardLayout from '@/components/DashboardLayout';
-import { CheckCircle, XCircle, Clock, Building2, Briefcase, MapPin, Star, Phone, Mail, UserCheck, Plus, DollarSign, Timer, ShieldCheck, User } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Building2, Briefcase, MapPin, Star, Phone, Mail, UserCheck, Plus, DollarSign, Timer, ShieldCheck, User, Layers, ImageIcon, Eye } from 'lucide-react';
 
 interface Vendor {
     id: string;
@@ -16,6 +16,7 @@ interface Vendor {
     experience_years: number | null;
     aadhaar_url: string | null;
     pan_url: string | null;
+    certification_docs: string[] | null;
     approval_status: 'PENDING' | 'APPROVED' | 'REJECTED';
     created_at: string;
 }
@@ -392,7 +393,7 @@ export default function VendorsPage() {
                                 <div className="mb-4 p-4 border border-dashed border-gray-300 rounded-lg bg-gray-50/50">
                                     <p className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-1">
                                         <UserCheck className="w-3 h-3 text-blue-500" />
-                                        KYC Verification Documents
+                                        KYC Verification Documents (Aadhaar/PAN)
                                     </p>
                                     <div className="flex flex-wrap gap-4">
                                         <div className="flex-1 min-w-[200px]">
@@ -425,6 +426,46 @@ export default function VendorsPage() {
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Certification & Licenses High Quality Docs */}
+                                {vendor.certification_docs && vendor.certification_docs.length > 0 && (
+                                    <div className="mb-4 p-4 border border-blue-200 rounded-lg bg-blue-50/30">
+                                        <p className="text-xs font-bold text-blue-800 uppercase mb-3 flex items-center gap-1">
+                                            <ShieldCheck className="w-3 h-3 text-blue-600" />
+                                            Licenses & Certifications (High Quality)
+                                        </p>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                            {vendor.certification_docs.map((doc, idx) => {
+                                                const isPdf = doc.toLowerCase().endsWith('.pdf');
+                                                return (
+                                                    <a
+                                                        key={idx}
+                                                        href={doc}
+                                                        target="_blank"
+                                                        className="flex items-center gap-2 p-3 bg-white rounded-lg border border-blue-100 hover:border-blue-400 hover:shadow-sm transition-all text-sm group"
+                                                    >
+                                                        {isPdf ? (
+                                                            <div className="bg-red-50 p-2 rounded text-red-600">
+                                                                <Layers className="w-5 h-5" />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="bg-green-50 p-2 rounded text-green-600">
+                                                                <ImageIcon className="w-5 h-5" />
+                                                            </div>
+                                                        )}
+                                                        <div className="overflow-hidden">
+                                                            <p className="font-semibold text-gray-800 truncate">Document {idx + 1}</p>
+                                                            <p className="text-xs text-gray-500 uppercase">{isPdf ? 'PDF Document' : 'Image File'}</p>
+                                                        </div>
+                                                        <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Eye className="w-4 h-4 text-blue-500" />
+                                                        </div>
+                                                    </a>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
 
                                 <div className="flex items-center justify-between text-xs text-gray-500 mb-4 pb-4 border-b border-gray-200">
                                     <span>Registered: {new Date(vendor.created_at).toLocaleString()}</span>

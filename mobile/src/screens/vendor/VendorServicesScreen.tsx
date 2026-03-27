@@ -40,6 +40,9 @@ const VendorServicesScreen = () => {
                 setServices(prev => prev.map(s =>
                     s.id === serviceId ? { ...s, customPrice, customDuration: customDuration ? parseInt(customDuration) : null, isEnabled } : s
                 ));
+                Alert.alert('Amount updated', 'Price has been updated', [
+                    { text: 'OK', onPress: () => navigation.goBack() }
+                ]);
             }
         } catch (error: any) {
             Alert.alert('Update Failed', error.response?.data?.error || 'Could not update service.');

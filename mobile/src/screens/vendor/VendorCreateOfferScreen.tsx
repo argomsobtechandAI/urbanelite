@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
     View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
-    Alert, ActivityIndicator, Image, Platform, PermissionsAndroid, FlatList,
+    Alert, ActivityIndicator, Image, Platform, PermissionsAndroid, FlatList, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
@@ -9,7 +9,7 @@ import { Theme } from '../../theme';
 import { RootStackParamList } from '../../types/navigation';
 import { offersAPI } from '../../services/api';
 import { storageService } from '../../services/storage';
-import { ArrowLeft, Image as ImageIcon, Video, X, Plus } from 'lucide-react-native';
+import { ArrowLeft, Image as ImageIcon, Video, X, Plus, Camera } from 'lucide-react-native';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 
 interface MediaItem {
@@ -26,12 +26,22 @@ const VendorCreateOfferScreen = () => {
     const [type, setType] = useState<'PROMOTION' | 'JOB'>('PROMOTION');
     const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
     const [uploadingMedia, setUploadingMedia] = useState(false);
+    const [showMediaOptions, setShowMediaOptions] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
         description: '',
         discountAmount: '',
         discountCode: '',
-        validUntil: '',
+        validUntil: new Date().toISOString().split('T')[0],
+    });
+
+    const futureDays = Array.from({ length: 30 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        return {
+            label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }),
+            value: d.toISOString().split('T')[0]
+        };
     });
 
     const requestCameraPermission = async (): Promise<boolean> => {
@@ -57,63 +67,49 @@ const VendorCreateOfferScreen = () => {
             Alert.alert('Limit Reached', 'You can attach up to 5 media files.');
             return;
         }
-        Alert.alert('Add Media', 'Choose source', [
-            {
-                text: 'Take Photo',
-                onPress: async () => {
-                    const hasPerm = await requestCameraPermission();
-                    if (!hasPerm) { Alert.alert('Permission Denied', 'Camera access required.'); return; }
-                    const result = await launchCamera({ mediaType: 'photo', includeBase64: true, quality: 0.8 });
-                    if (!result.didCancel && result.assets?.[0]) {
-                        const asset = result.assets[0];
-                        setMediaItems(prev => [...prev, {
-                            uri: asset.uri!,
-                            base64: asset.base64!,
-                            type: asset.type || 'image/jpeg',
-                            name: asset.fileName || `photo_${Date.now()}.jpg`,
-                            isVideo: false,
-                        }]);
-                    }
-                },
-            },
-            {
-                text: 'Choose Photo from Gallery',
-                onPress: async () => {
-                    const result = await launchImageLibrary({ mediaType: 'photo', includeBase64: true, quality: 0.8 });
-                    if (!result.didCancel && result.assets?.[0]) {
-                        const asset = result.assets[0];
-                        setMediaItems(prev => [...prev, {
-                            uri: asset.uri!,
-                            base64: asset.base64!,
-                            type: asset.type || 'image/jpeg',
-                            name: asset.fileName || `photo_${Date.now()}.jpg`,
-                            isVideo: false,
-                        }]);
-                    }
-                },
-            },
-            {
-                text: 'Choose Video from Gallery',
-                onPress: async () => {
-                    const result = await launchImageLibrary({ mediaType: 'video', includeBase64: true, quality: 0.8 });
-                    if (!result.didCancel && result.assets?.[0]) {
-                        const asset = result.assets[0];
-                        if (asset.fileSize && asset.fileSize > 50 * 1024 * 1024) {
-                            Alert.alert('File Too Large', 'Video must be under 50MB.');
-                            return;
-                        }
-                        setMediaItems(prev => [...prev, {
-                            uri: asset.uri!,
-                            base64: asset.base64 || '',
-                            type: asset.type || 'video/mp4',
-                            name: asset.fileName || `video_${Date.now()}.mp4`,
-                            isVideo: true,
-                        }]);
-                    }
-                },
-            },
-            { text: 'Cancel', style: 'cancel' },
-        ]);
+        setShowMediaOptions(true);
+    };
+
+    const handleMediaPick = async (pickType: 'camera' | 'photo' | 'video') => {
+        setShowMediaOptions(false);
+        let result: any;
+        if (pickType === 'camera') {
+            const hasPerm = await requestCameraPermission();
+            if (!hasPerm) { Alert.alert('Permission Denied', 'Camera access required.'); return; }
+            result = await launchCamera({ mediaType: 'photo', includeBase64: true, quality: 0.8 });
+        } else if (pickType === 'photo') {
+            result = await launchImageLibrary({ mediaType: 'photo', includeBase64: true, quality: 0.8 });
+        } else {
+            result = await launchImageLibrary({ mediaType: 'video', includeBase64: true, quality: 0.8 });
+        }
+
+        if (!result?.didCancel && result?.assets?.[0]) {
+            const asset = result.assets[0];
+            if (pickType === 'video' && asset.fileSize && asset.fileSize > 50 * 1024 * 1024) {
+                Alert.alert('File Too Large', 'Video must be under 50MB.');
+                return;
+            }
+            setMediaItems(prev => [...prev, {
+                uri: asset.uri!,
+                base64: asset.base64 || '',
+                type: asset.type || (pickType === 'video' ? 'video/mp4' : 'image/jpeg'),
+                name: asset.fileName || `${pickType}_${Date.now()}.${pickType === 'video' ? 'mp4' : 'jpg'}`,
+                isVideo: pickType === 'video',
+            }]);
+        }
+    };
+
+    const handleTypeChange = (newType: 'PROMOTION' | 'JOB') => {
+        if (newType === type) return;
+        setType(newType);
+        setFormData({
+            title: '',
+            description: '',
+            discountAmount: '',
+            discountCode: '',
+            validUntil: new Date().toISOString().split('T')[0],
+        });
+        setMediaItems([]);
     };
 
     const handleRemoveMedia = (index: number) => {
@@ -180,9 +176,11 @@ const VendorCreateOfferScreen = () => {
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <ArrowLeft size={24} color={Theme.colors.textDark} />
-                </TouchableOpacity>
+                {navigation.canGoBack() && (
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        <ArrowLeft size={24} color={Theme.colors.textDark} />
+                    </TouchableOpacity>
+                )}
                 <Text style={styles.headerTitle}>{type === 'JOB' ? 'Post Job Opening' : 'Create New Offer'}</Text>
             </View>
 
@@ -191,13 +189,13 @@ const VendorCreateOfferScreen = () => {
                 <View style={styles.typeContainer}>
                     <TouchableOpacity
                         style={[styles.typeButton, type === 'PROMOTION' && styles.activeTypeButton]}
-                        onPress={() => setType('PROMOTION')}
+                        onPress={() => handleTypeChange('PROMOTION')}
                     >
                         <Text style={[styles.typeText, type === 'PROMOTION' && styles.activeTypeText]}>Promotion / Ad</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.typeButton, type === 'JOB' && styles.activeTypeButton]}
-                        onPress={() => setType('JOB')}
+                        onPress={() => handleTypeChange('JOB')}
                     >
                         <Text style={[styles.typeText, type === 'JOB' && styles.activeTypeText]}>Job Opening</Text>
                     </TouchableOpacity>
@@ -226,10 +224,15 @@ const VendorCreateOfferScreen = () => {
                 <Text style={styles.label}>{type === 'JOB' ? 'Salary / Compensation *' : 'Discount Amount *'}</Text>
                 <TextInput
                     style={styles.input}
-                    placeholder={type === 'JOB' ? 'e.g. ₹25,000 - ₹35,000 / month' : 'e.g. 20% OFF or ₹500 OFF'}
+                    placeholder={type === 'JOB' ? 'e.g. 25000' : 'e.g. 500'}
                     placeholderTextColor="#94A3B8"
                     value={formData.discountAmount}
-                    onChangeText={t => setFormData({ ...formData, discountAmount: t })}
+                    keyboardType="number-pad"
+                    maxLength={10}
+                    onChangeText={t => {
+                        const numericValue = t.replace(/[^0-9]/g, '');
+                        setFormData({ ...formData, discountAmount: numericValue });
+                    }}
                 />
 
                 <Text style={styles.label}>{type === 'JOB' ? 'Job ID / Reference (Optional)' : 'Discount Code (Optional)'}</Text>
@@ -242,17 +245,8 @@ const VendorCreateOfferScreen = () => {
                     onChangeText={t => setFormData({ ...formData, discountCode: t })}
                 />
 
-                <Text style={styles.label}>{type === 'JOB' ? 'Application Deadline (YYYY-MM-DD)' : 'Valid Until (YYYY-MM-DD)'}</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="2024-12-31"
-                    placeholderTextColor="#94A3B8"
-                    value={formData.validUntil}
-                    onChangeText={t => setFormData({ ...formData, validUntil: t })}
-                />
-
                 {/* Media Upload Section */}
-                <Text style={styles.label}>Photos & Videos (Optional — max 5)</Text>
+                <Text style={styles.label}>Upload Photos & Videos (Select up to 5 files)</Text>
                 <View style={styles.mediaGrid}>
                     {mediaItems.map((item, index) => (
                         <View key={index} style={styles.mediaThumbnail}>
@@ -269,12 +263,37 @@ const VendorCreateOfferScreen = () => {
                     ))}
                     {mediaItems.length < 5 && (
                         <TouchableOpacity style={styles.addMediaBtn} onPress={handleAddMedia}>
-                            <ImageIcon size={24} color={Theme.colors.brandOrange} />
-                            <Text style={styles.addMediaText}>Add</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                                <ImageIcon size={20} color={Theme.colors.brandOrange} />
+                                <Text style={{ color: Theme.colors.brandOrange, fontWeight: 'bold' }}>/</Text>
+                                <Video size={20} color={Theme.colors.brandOrange} />
+                            </View>
+                            <Text style={styles.addMediaText}>Upload Now</Text>
                         </TouchableOpacity>
                     )}
                 </View>
-                <Text style={styles.mediaHint}>Supported: JPG, PNG, MP4 (video max 50MB)</Text>
+                <Text style={styles.mediaHint}>Attach photos or videos to showcase your {type === 'JOB' ? 'workplace' : 'offer'} (MP4 max 50MB)</Text>
+
+                <Text style={styles.label}>{type === 'JOB' ? 'Application Deadline' : 'Valid Until'}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dateScroll}>
+                    {futureDays.map((day) => (
+                        <TouchableOpacity
+                            key={day.value}
+                            style={[
+                                styles.dateChip,
+                                formData.validUntil === day.value && styles.activeDateChip
+                            ]}
+                            onPress={() => setFormData({ ...formData, validUntil: day.value })}
+                        >
+                            <Text style={[
+                                styles.dateChipText,
+                                formData.validUntil === day.value && styles.activeDateChipText
+                            ]}>
+                                {day.label}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
 
                 <TouchableOpacity
                     style={[styles.createButton, loading && { opacity: 0.7 }]}
@@ -292,6 +311,49 @@ const VendorCreateOfferScreen = () => {
                 </TouchableOpacity>
                 <View style={{ height: 50 }} />
             </ScrollView>
+
+            {/* Media Options Modal */}
+            <Modal
+                visible={showMediaOptions}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setShowMediaOptions(false)}
+            >
+                <TouchableOpacity
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setShowMediaOptions(false)}
+                >
+                    <View style={styles.optionsModal}>
+                        <Text style={styles.modalTitle}>Add Media</Text>
+                        
+                        <TouchableOpacity style={styles.optionItem} onPress={() => handleMediaPick('camera')}>
+                            <View style={[styles.optionIcon, { backgroundColor: '#F0FFF4' }]}>
+                                <Camera size={24} color="#48BB78" />
+                            </View>
+                            <Text style={styles.optionText}>Take a Photo</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.optionItem} onPress={() => handleMediaPick('photo')}>
+                            <View style={[styles.optionIcon, { backgroundColor: '#EBF8FF' }]}>
+                                <ImageIcon size={24} color="#4299E1" />
+                            </View>
+                            <Text style={styles.optionText}>Choose Photo from Gallery</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.optionItem} onPress={() => handleMediaPick('video')}>
+                            <View style={[styles.optionIcon, { backgroundColor: '#FFF5F5' }]}>
+                                <Video size={24} color="#F56565" />
+                            </View>
+                            <Text style={styles.optionText}>Choose Video from Gallery</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowMediaOptions(false)}>
+                            <Text style={styles.cancelBtnText}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </SafeAreaView>
     );
 };
@@ -335,6 +397,40 @@ const styles = StyleSheet.create({
 
     createButton: { backgroundColor: Theme.colors.brandOrange, padding: 18, borderRadius: 15, alignItems: 'center', marginTop: 30, shadowColor: Theme.colors.brandOrange, shadowOpacity: 0.3, shadowRadius: 10, elevation: 5 },
     createButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+
+    // Modal Styles
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+    optionsModal: { backgroundColor: 'white', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 25, paddingBottom: 40 },
+    modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#1E293B', marginBottom: 20, textAlign: 'center' },
+    optionItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+    optionIcon: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+    optionText: { fontSize: 16, fontWeight: '600', color: '#334155' },
+    cancelBtn: { marginTop: 20, paddingVertical: 15, alignItems: 'center', backgroundColor: '#F1F5F9', borderRadius: 15 },
+    cancelBtnText: { fontSize: 16, fontWeight: 'bold', color: '#64748B' },
+
+    // Date Chips
+    dateScroll: { flexDirection: 'row', marginTop: 5, marginBottom: 10 },
+    dateChip: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 20,
+        marginRight: 10,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    activeDateChip: {
+        backgroundColor: Theme.colors.brandOrange,
+        borderColor: Theme.colors.brandOrange,
+    },
+    dateChipText: {
+        fontSize: 13,
+        color: '#64748B',
+        fontWeight: '600',
+    },
+    activeDateChipText: {
+        color: 'white',
+    },
 });
 
 export default VendorCreateOfferScreen;

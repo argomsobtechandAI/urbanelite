@@ -42,7 +42,7 @@ export default function Sidebar() {
     return (
         <div className="flex flex-col h-full bg-gray-900 text-white w-64">
             <div className="p-6">
-                <h1 className="text-2xl font-bold">Olfix</h1>
+                <img src="/images/logo.png" alt="Olfix Logo" className="h-10 mb-2 brightness-0 invert" />
                 <p className="text-gray-400 text-sm">Admin Panel</p>
             </div>
 

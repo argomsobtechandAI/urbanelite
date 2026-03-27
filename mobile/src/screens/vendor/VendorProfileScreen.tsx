@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity,
     ActivityIndicator, Image, Alert, Platform, PermissionsAndroid,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { Theme } from '../../theme';
 import { RootStackParamList } from '../../types/navigation';
 import { userAPI } from '../../services/api';
 import { Camera } from 'lucide-react-native';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import { storageService } from '../../services/storage';
+
+const LOGO_IMG = require('../../assets/images/logo.png');
 
 const MENU_ITEMS = [
     { id: 'VendorServices', title: 'My Services', icon: '🛠️' },
@@ -28,9 +30,11 @@ const VendorProfileScreen = () => {
     const [loading, setLoading] = useState(true);
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-    useEffect(() => {
-        fetchProfile();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            fetchProfile();
+        }, [])
+    );
 
     const fetchProfile = async () => {
         try {
@@ -133,13 +137,10 @@ const VendorProfileScreen = () => {
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <View style={styles.logoContainer}>
-                        <View style={styles.logoIcon}>
-                            <Text style={styles.logoIconText}>⚡</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <View style={styles.logoContainer}>
+                            <Image source={LOGO_IMG} style={styles.headerLogo} resizeMode="contain" />
                         </View>
-                        <Text style={styles.headerTitle}>
-                            <Text style={styles.titleOlfix}>OLFIX</Text>
-                        </Text>
                     </View>
                 </View>
 
@@ -215,11 +216,7 @@ const styles = StyleSheet.create({
 
     header: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 20 },
     logoContainer: { flexDirection: 'row', alignItems: 'center' },
-    logoIcon: { width: 40, height: 40, backgroundColor: Theme.colors.brandOrange, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
-    logoIconText: { fontSize: 24, color: 'white' },
-    headerTitle: { fontSize: 22, fontWeight: 'bold' },
-    titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900' },
-    titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900', fontStyle: 'italic' },
+    headerLogo: { width: 100, height: 45 },
 
     contentContainer: { paddingHorizontal: 20 },
 

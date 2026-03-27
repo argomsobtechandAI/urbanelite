@@ -5,9 +5,10 @@ import VendorHomeScreen from '../screens/vendor/VendorHomeScreen';
 import VendorBookingsScreen from '../screens/vendor/VendorBookingsScreen';
 import VendorRevenueScreen from '../screens/vendor/VendorRevenueScreen';
 import VendorProfileScreen from '../screens/vendor/VendorProfileScreen';
+import VendorCreateOfferScreen from '../screens/vendor/VendorCreateOfferScreen';
 import { Theme } from '../theme';
 
-import { LayoutDashboard, Calendar, DollarSign, User } from 'lucide-react-native';
+import { LayoutDashboard, Calendar, IndianRupee, User, PlusSquare } from 'lucide-react-native';
 
 const Tab = createBottomTabNavigator();
 
@@ -17,7 +18,8 @@ const TabIcon = ({ name, focused }: { name: string; focused: boolean }) => {
 
     if (name === 'Dashboard') return <LayoutDashboard size={size} color={color} />;
     if (name === 'Bookings') return <Calendar size={size} color={color} />;
-    if (name === 'Revenue') return <DollarSign size={size} color={color} />;
+    if (name === 'Ads/Promo') return <PlusSquare size={size} color={color} />;
+    if (name === 'Revenue') return <IndianRupee size={size} color={color} />;
     if (name === 'Profile') return <User size={size} color={color} />;
 
     return <LayoutDashboard size={size} color={color} />;
@@ -48,6 +50,7 @@ const VendorTabNavigator = () => {
         >
             <Tab.Screen name="Dashboard" component={VendorHomeScreen} />
             <Tab.Screen name="Bookings" component={VendorBookingsScreen} />
+            <Tab.Screen name="Ads/Promo" component={VendorCreateOfferScreen} options={{ tabBarLabel: 'New Ads/Promo' }} />
             <Tab.Screen name="Revenue" component={VendorRevenueScreen} />
             <Tab.Screen name="Profile" component={VendorProfileScreen} />
         </Tab.Navigator>

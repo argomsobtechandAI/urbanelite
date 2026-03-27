@@ -2,21 +2,22 @@ export const Theme = {
     colors: {
         // New Palette
         primary: '#FF9F1C',   // Golden Orange
-        secondary: '#FFD700', // Yellow
-        navy: '#0F172A',      // Dark Navy
+        secondary: '#FFD700', // Golden Yellow
+        accentRed: '#EF4444',  // Vibrant Red
+        navy: '#EF4444',       // Reusing key for compatibility (now red)
         softGrey: '#E2E8F0',  // Soft Grey
 
         // Mapped Keys (updated to match new scheme)
-        brandOrange: '#FF9F1C', // Golden Orange (was Navy)
-        buttonPeach: '#FF9F1C', // Mapped to Primary (Golden Orange) for buttons
+        brandOrange: '#FF9F1C', // Golden Orange
+        buttonPeach: '#FF9F1C', // Mapped to Primary
         background: '#FFFFFF',  // Pure White
-        inputBg: '#F8FAFC',     // Light background (keep slightly lighter than softGrey for inputs)
-        textDark: '#0F172A',    // Dark Navy Text
+        inputBg: '#F8FAFC',     // Light background
+        textDark: '#1E293B',    // Soft Slate (instead of black/navy)
         textLight: '#64748B',   // Muted Slate
         border: '#E2E8F0',      // Soft Grey Border
         searchBg: '#F1F5F9',
         cardBg: '#FFFFFF',
-        iconGray: '#0F172A',    // Dark Navy Icons
+        iconGray: '#FF9F1C',    // Orange Icons
         activeTab: '#FF9F1C',   // Golden Orange Active Tab
         inactiveTab: '#94A3B8',
     },

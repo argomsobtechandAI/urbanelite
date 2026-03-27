@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, LayoutAnimation, Platform, UIManager, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { ArrowLeft, Phone, Mail, ChevronRight, HelpCircle } from 'lucide-react-native';
+import { ArrowLeft, Phone, Mail, ChevronRight, HelpCircle, MessageCircle } from 'lucide-react-native';
 import { Theme } from '../../theme';
 
 if (Platform.OS === 'android') {
@@ -13,6 +13,21 @@ if (Platform.OS === 'android') {
 
 const VendorSupportHelpScreen = () => {
     const navigation = useNavigation();
+
+    const openWhatsApp = () => {
+        const phone = '+919999999999';
+        const message = 'Hello Olfix Support, I am a partner and I need help regarding...';
+        const url = `whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`;
+        
+        Linking.canOpenURL(url).then(supported => {
+            if (supported) {
+                Linking.openURL(url);
+            } else {
+                // Fallback to web link if app not installed
+                Linking.openURL(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`);
+            }
+        });
+    };
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -33,21 +48,34 @@ const VendorSupportHelpScreen = () => {
                     <HelpCircle size={60} color="rgba(255,255,255,0.2)" style={styles.bannerIcon} />
                 </View>
 
-                <Text style={styles.sectionTitle}>Contact Partner Support</Text>
+                <Text style={styles.sectionTitle}>Direct Chat Support</Text>
+
+                <TouchableOpacity style={styles.whatsappCard} onPress={openWhatsApp}>
+                    <View style={styles.whatsappIconBox}>
+                        <MessageCircle size={32} color="white" />
+                    </View>
+                    <View style={styles.whatsappTextContent}>
+                        <Text style={styles.whatsappTitle}>Chat on WhatsApp</Text>
+                        <Text style={styles.whatsappSubtitle}>Instant support for all your queries</Text>
+                    </View>
+                    <ChevronRight size={24} color="#64748B" />
+                </TouchableOpacity>
+
+                <Text style={[styles.sectionTitle, { marginTop: 30 }]}>Other Ways to Reach Us</Text>
 
                 <View style={styles.contactGrid}>
-                    <TouchableOpacity style={styles.contactCard}>
+                    <TouchableOpacity style={styles.contactCard} onPress={() => Linking.openURL('tel:+919999999999')}>
                         <View style={[styles.contactIconBox, { backgroundColor: '#E0F2FE' }]}>
                             <Phone size={24} color="#0EA5E9" />
                         </View>
-                        <Text style={styles.contactLabel}>Call Line</Text>
+                        <Text style={styles.contactLabel}>Call Support</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.contactCard}>
+                    <TouchableOpacity style={styles.contactCard} onPress={() => Linking.openURL('mailto:support@olfix.in')}>
                         <View style={[styles.contactIconBox, { backgroundColor: '#F3E8FF' }]}>
                             <Mail size={24} color="#A855F7" />
                         </View>
-                        <Text style={styles.contactLabel}>Email Us</Text>
+                        <Text style={styles.contactLabel}>Email Support</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -120,6 +148,13 @@ const styles = StyleSheet.create({
     contactCard: { flex: 1, backgroundColor: 'white', borderRadius: 16, padding: 15, alignItems: 'center', borderWidth: 1, borderColor: '#F0F0F0', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 },
     contactIconBox: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
     contactLabel: { fontSize: 14, fontWeight: '600', color: Theme.colors.textDark },
+    
+    whatsappCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F0FFF4', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: '#C6F6D5', shadowColor: '#38A169', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
+    whatsappIconBox: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#25D366', justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+    whatsappTextContent: { flex: 1 },
+    whatsappTitle: { fontSize: 18, fontWeight: 'bold', color: Theme.colors.textDark, marginBottom: 4 },
+    whatsappSubtitle: { fontSize: 14, color: '#38A169', fontWeight: '500' },
+
     faqList: { backgroundColor: 'white', borderRadius: 16, borderWidth: 1, borderColor: '#F0F0F0', overflow: 'hidden' },
     faqWrapper: { borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
     faqHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20 },

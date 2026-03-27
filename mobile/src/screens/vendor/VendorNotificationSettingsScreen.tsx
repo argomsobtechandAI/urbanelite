@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Switch, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { ArrowLeft, Bell, Tag, ShieldCheck, DollarSign } from 'lucide-react-native';
+import { ArrowLeft, Bell, Tag, ShieldCheck, IndianRupee } from 'lucide-react-native';
 import { Theme } from '../../theme';
 import { userAPI } from '../../services/api';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, Switch, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const VendorNotificationSettingsScreen = () => {
     const navigation = useNavigation();
@@ -17,29 +17,51 @@ const VendorNotificationSettingsScreen = () => {
         payouts: true
     });
 
-    useEffect(() => {
-        // Load settings from API
-        loadSettings();
-    }, []);
+    const MAPPING: { [key: string]: string } = {
+        bookingUpdates: 'booking_updates',
+        offersPromotions: 'offers_promotions',
+        serviceReminders: 'service_reminders',
+        accountSecurity: 'account_security',
+        newLeads: 'new_leads',
+        payouts: 'payouts'
+    };
+
+    const REVERSE_MAPPING: { [key: string]: string } = Object.entries(MAPPING).reduce((acc, [k, v]) => ({ ...acc, [v]: k }), {});
+
+    useFocusEffect(
+        useCallback(() => {
+            loadSettings();
+        }, [])
+    );
 
     const loadSettings = async () => {
         try {
             const response = await userAPI.getNotificationSettings();
             if (response.data) {
-                setSettings({ ...settings, ...response.data });
+                const mappedData: any = {};
+                Object.entries(response.data).forEach(([key, value]) => {
+                    if (REVERSE_MAPPING[key]) {
+                        mappedData[REVERSE_MAPPING[key]] = value;
+                    }
+                });
+                setSettings(prev => ({ ...prev, ...mappedData }));
             }
         } catch (error) {
-            console.error(error);
+            console.error('Failed to load settings:', error);
         }
     };
 
     const toggleSwitch = async (key: string, value: boolean) => {
+        const backendKey = MAPPING[key] || key;
         const newSettings = { ...settings, [key]: value };
         setSettings(newSettings);
         try {
-            await userAPI.updateNotificationSettings({ [key]: value });
+            await userAPI.updateNotificationSettings({ [backendKey]: value });
         } catch (error) {
-            console.error(error);
+            console.error('Failed to update setting:', error);
+            // Optionally revert local state if update fails
+            setSettings(prev => ({ ...prev, [key]: !value }));
+            Alert.alert('Error', 'Failed to update notification settings');
         }
     };
 
@@ -84,7 +106,7 @@ const VendorNotificationSettingsScreen = () => {
                 />
 
                 <SettingItem
-                    icon={<DollarSign />}
+                    icon={<IndianRupee />}
                     title="New Leads & Offers"
                     description="Receive notifications for new job leads nearby"
                     value={settings.newLeads}

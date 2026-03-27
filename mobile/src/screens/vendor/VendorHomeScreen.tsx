@@ -1,21 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { Theme } from '../../theme';
 import { RootStackParamList } from '../../types/navigation';
 import { vendorAPI } from '../../services/api';
-import { Calendar, Clock, DollarSign } from 'lucide-react-native';
+import { Calendar, Clock, IndianRupee } from 'lucide-react-native';
 import NotificationBell from '../../components/NotificationBell';
+
+const LOGO_IMG = require('../../assets/images/logo.png');
 
 const VendorHomeScreen = () => {
     const navigation = useNavigation<NavigationProp<RootStackParamList>>();
     const [loading, setLoading] = useState(true);
     const [dashboardData, setDashboardData] = useState<any>(null);
 
-    useEffect(() => {
-        fetchDashboard();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            fetchDashboard();
+        }, [])
+    );
 
     const fetchDashboard = async () => {
         try {
@@ -49,21 +53,10 @@ const VendorHomeScreen = () => {
                         onPress={() => navigation.navigate('VendorTabs' as any, { screen: 'Dashboard' } as any)}
                         activeOpacity={0.75}
                     >
-                        <View style={styles.logoIcon}>
-                            <Text style={styles.logoIconText}>🛠️</Text>
-                        </View>
-                        <Text style={styles.headerTitle}>
-                            <Text style={styles.titleOlfix}>OLFIX</Text>
-                        </Text>
+                        <Image source={LOGO_IMG} style={styles.headerLogo} resizeMode="contain" />
                     </TouchableOpacity>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <NotificationBell navigation={navigation} />
-                        <TouchableOpacity
-                            style={[styles.notificationButton, { marginLeft: 10, backgroundColor: Theme.colors.brandOrange }]}
-                            onPress={() => navigation.navigate('VendorCreateOffer' as any)}
-                        >
-                            <Text style={{ fontSize: 20, color: 'white' }}>+</Text>
-                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -77,8 +70,8 @@ const VendorHomeScreen = () => {
                 <View style={styles.statsContainer}>
                     <View style={styles.statsRow}>
                         <View style={[styles.statCard, { backgroundColor: Theme.colors.background, borderWidth: 1, borderColor: Theme.colors.border }]}>
-                            <View style={[styles.statIconContainer, { backgroundColor: Theme.colors.inputBg }]}>
-                                <Calendar size={20} color={Theme.colors.navy} />
+                            <View style={[styles.statIconContainer, { backgroundColor: '#FFFEF0' }]}>
+                                <Calendar size={20} color={Theme.colors.secondary} />
                             </View>
                             <Text style={styles.statValue}>{stats.todayBookings || 0}</Text>
                             <Text style={styles.statLabel}>Today's Bookings</Text>
@@ -96,7 +89,7 @@ const VendorHomeScreen = () => {
                     <View style={styles.statsRow}>
                         <View style={[styles.statCard, { backgroundColor: Theme.colors.navy, flex: 1 }]}>
                             <View style={[styles.statIconContainer, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-                                <DollarSign size={20} color={Theme.colors.primary} />
+                                <IndianRupee size={20} color={Theme.colors.primary} />
                             </View>
                             <Text style={[styles.statValue, { color: '#FFFFFF' }]}>{stats.totalRevenue || '₹0'}</Text>
                             <Text style={[styles.statLabel, { color: 'rgba(255,255,255,0.7)' }]}>Total Revenue</Text>
@@ -154,11 +147,7 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: Theme.colors.background },
     header: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     logoContainer: { flexDirection: 'row', alignItems: 'center' },
-    logoIcon: { width: 40, height: 40, backgroundColor: Theme.colors.brandOrange, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
-    logoIconText: { fontSize: 24, color: 'white' },
-    headerTitle: { fontSize: 22, fontWeight: Theme.typography.weights.bold },
-    titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900', letterSpacing: -0.5 },
-    titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900', fontStyle: 'italic', letterSpacing: -0.5 },
+    headerLogo: { width: 100, height: 45 },
     notificationButton: { width: 40, height: 40, backgroundColor: Theme.colors.searchBg, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
     notificationBadge: { width: 8, height: 8, backgroundColor: Theme.colors.primary, borderRadius: 4, position: 'absolute', top: 10, right: 10, borderWidth: 1, borderColor: '#FFF' },
 

@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Theme } from '../../theme';
 import { vendorAPI } from '../../services/api';
 import { CheckCircle, XCircle, Clock, MessageCircle } from 'lucide-react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const VendorBookingsScreen = () => {
     const navigation = useNavigation<any>();
@@ -12,9 +12,11 @@ const VendorBookingsScreen = () => {
     const [bookings, setBookings] = useState<any[]>([]);
     const [selectedTab, setSelectedTab] = useState<'PENDING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED'>('PENDING');
 
-    useEffect(() => {
-        fetchBookings();
-    }, [selectedTab]);
+    useFocusEffect(
+        useCallback(() => {
+            fetchBookings();
+        }, [selectedTab])
+    );
 
     const fetchBookings = async () => {
         try {
@@ -66,7 +68,9 @@ const VendorBookingsScreen = () => {
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Bookings</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={styles.headerTitle}>Bookings</Text>
+                </View>
                 <Text style={styles.headerSubtitle}>Manage service requests</Text>
             </View>
 
