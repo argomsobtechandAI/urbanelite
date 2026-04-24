@@ -42,7 +42,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
     useEffect(() => {
         GoogleSignin.configure({
-            webClientId: '206297713985-hiijn9vngqa4flqi27aumdel2gcqvu4j.apps.googleusercontent.com',
+            webClientId: '473322533502-f511p5pkibcpdgbbgv6br33siptdve6c.apps.googleusercontent.com',
             offlineAccess: true,
         });
         checkLocation();
