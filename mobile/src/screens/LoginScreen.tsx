@@ -11,6 +11,7 @@ import {
     Platform,
     PermissionsAndroid,
     ScrollView,
+    Linking,
 } from 'react-native';
 const RNAndroidLocationEnabler = require('react-native-android-location-enabler').default || require('react-native-android-location-enabler');
 import Svg, { Path } from 'react-native-svg';
@@ -19,12 +20,10 @@ import { RootStackParamList } from '../types/navigation';
 import { authAPI } from '../services/api';
 import { authService } from '../services/authService';
 import { Theme } from '../theme';
-import {
-    GoogleSignin,
-    statusCodes,
-} from '@react-native-google-signin/google-signin';
 import { supabase } from '../lib/supabase';
 import { Eye, EyeOff } from 'lucide-react-native';
+
+const REDIRECT_URL = 'com.olfix://callback';
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
 
@@ -41,11 +40,27 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     const [loginError, setLoginError] = useState('');
 
     useEffect(() => {
-        GoogleSignin.configure({
-            webClientId: '206297713985-hiijn9vngqa4flqi27aumdel2gcqvu4j.apps.googleusercontent.com',
-            offlineAccess: true,
-        });
         checkLocation();
+
+        // Listen for deep link callback from Supabase OAuth
+        const handleDeepLink = async (event: { url: string }) => {
+            if (event.url.startsWith(REDIRECT_URL)) {
+                await handleOAuthCallback(event.url);
+            }
+        };
+
+        const subscription = Linking.addEventListener('url', handleDeepLink);
+
+        // Check if app was opened via a deep link (cold start)
+        Linking.getInitialURL().then((url) => {
+            if (url && url.startsWith(REDIRECT_URL)) {
+                handleOAuthCallback(url);
+            }
+        });
+
+        return () => {
+            subscription.remove();
+        };
     }, []);
 
     const checkLocation = async () => {
@@ -63,30 +78,46 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         }
     };
 
-    const handleGoogleLogin = async () => {
+    /**
+     * Handle the OAuth callback deep link from Supabase.
+     * The URL contains access_token and refresh_token as fragment parameters.
+     */
+    const handleOAuthCallback = async (url: string) => {
         try {
             setLoading(true);
             setLoginError('');
 
-            await GoogleSignin.hasPlayServices();
-            const response = await GoogleSignin.signIn();
-
-            const idToken = response.data?.idToken ?? (response as any).idToken;
-
-            if (!idToken) {
-                if ((response as any).type === 'cancelled') return;
-                throw new Error('No ID token received from Google');
+            // Extract tokens from the URL fragment
+            // Format: com.olfix://callback#access_token=...&refresh_token=...&...
+            const fragmentIndex = url.indexOf('#');
+            if (fragmentIndex === -1) {
+                throw new Error('No auth tokens in callback URL');
             }
 
-            const { data: supabaseData, error: supabaseError } = await supabase.auth.signInWithIdToken({
-                provider: 'google',
-                token: idToken,
+            const fragment = url.substring(fragmentIndex + 1);
+            const params = new URLSearchParams(fragment);
+            const accessToken = params.get('access_token');
+            const refreshToken = params.get('refresh_token');
+
+            if (!accessToken || !refreshToken) {
+                throw new Error('Missing tokens in callback');
+            }
+
+            // Set the Supabase session using the tokens
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken,
             });
 
-            if (supabaseError) throw supabaseError;
-            if (!supabaseData.session) throw new Error('No session returned from Supabase');
+            if (sessionError) throw sessionError;
+            if (!sessionData.session) throw new Error('Failed to create session');
 
-            const apiResponse = await authAPI.googleLogin(idToken, selectedRole);
+            const supaUser = sessionData.session.user;
+            console.log('Supabase OAuth session created for:', supaUser.email);
+
+            // Sync with our backend — send the access token as idToken
+            // The backend will decode it and create/lookup the user
+            const apiResponse = await authAPI.googleLogin(accessToken, selectedRole);
             const data = apiResponse.data;
 
             if (!data.success) throw new Error(data.error || 'Google Login failed');
@@ -98,35 +129,57 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             navigation.reset({ index: 0, routes: [{ name: targetScreen as any }] });
 
         } catch (error: any) {
-            if (error.code === statusCodes.SIGN_IN_CANCELLED) return;
-            if (error.code === statusCodes.IN_PROGRESS) return;
-            if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-                Alert.alert('Error', 'Google Play Services not available or outdated');
-                return;
-            }
-
-            // DEVELOPER_ERROR — SHA-1 not registered in Google Console
-            if (error.code === '10' || error.message?.includes('DEVELOPER_ERROR')) {
-                Alert.alert(
-                    'Google Sign-In Not Configured',
-                    'Google Sign-In requires the app\'s SHA-1 fingerprint to be registered in Google Cloud Console. Please use email/password login for now.',
-                    [{ text: 'OK' }]
-                );
-                return;
-            }
-
+            console.error('OAuth callback error:', error);
             const errorData = error.response?.data;
             if (errorData?.approvalStatus === 'PENDING') {
                 Alert.alert('Approval Pending', 'Your account is pending admin approval.');
                 return;
             }
             if (errorData?.approvalStatus === 'REJECTED') {
-                Alert.alert('Account Rejected', 'Your account has been rejected. Contact support.');
+                Alert.alert('Account Rejected', 'Your account has been rejected.');
                 return;
             }
-            Alert.alert('Google Login Failed', errorData?.error || error.message || 'An error occurred');
+            setLoginError(errorData?.error || error.message || 'Google sign-in failed. Please try again.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    /**
+     * Web-based Google OAuth via Supabase.
+     * Opens Google login in system browser → redirects back to app via deep link.
+     */
+    const handleGoogleLogin = async () => {
+        try {
+            setLoading(true);
+            setLoginError('');
+
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: REDIRECT_URL,
+                    skipBrowserRedirect: true,
+                },
+            });
+
+            if (error) throw error;
+            if (!data.url) throw new Error('Failed to get Google login URL');
+
+            // Open the URL in the system browser
+            const supported = await Linking.canOpenURL(data.url);
+            if (supported) {
+                await Linking.openURL(data.url);
+            } else {
+                throw new Error('Cannot open browser for Google login');
+            }
+
+        } catch (error: any) {
+            console.error('Google OAuth error:', error);
+            setLoginError(error.message || 'Failed to start Google login. Please try again.');
+        } finally {
+            // Don't set loading=false here — we wait for the callback
+            // setLoading will be reset in handleOAuthCallback
+            setTimeout(() => setLoading(false), 5000); // Safety timeout
         }
     };
 
@@ -348,7 +401,6 @@ const styles = StyleSheet.create({
         borderColor: '#E2E8F0',
     },
 
-    // Password field with eye icon
     passwordContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -369,7 +421,6 @@ const styles = StyleSheet.create({
         padding: 4,
     },
 
-    // Inline error
     errorBox: {
         backgroundColor: '#FEF2F2',
         borderRadius: 10,

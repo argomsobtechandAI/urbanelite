@@ -442,7 +442,7 @@ exports.resetPassword = async (req, res) => {
         });
     }
 };
-// Google Login
+// Google Login (supports both native Google idToken and Supabase OAuth access token)
 exports.googleLogin = async (req, res) => {
     try {
         const { idToken, role } = req.body;
@@ -454,46 +454,79 @@ exports.googleLogin = async (req, res) => {
             });
         }
 
-        // Initialize Google OAuth Client
-        // Note: In a real app, strict verification with GOOGLE_CLIENT_ID is recommended
-        // For development/emulator, we might need to be lenient or ensure env vars are set
-        // const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-        // For now, we'll decode without strict verification if library fails or env is missing
-        // But let's try to use the library first.
         let payload;
 
-        try {
-            // Lazy load to avoid crash if not installed yet
-            const { OAuth2Client } = require('google-auth-library');
-            const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+        // Strategy: Try multiple methods to extract user info from the token
+        // 1. Try Supabase token verification (for web-based OAuth flow)
+        // 2. Try Google OAuth verification (for native Google Sign-In)
+        // 3. Fallback: decode JWT manually (dev only)
 
-            const ticket = await client.verifyIdToken({
-                idToken,
-                audience: process.env.GOOGLE_CLIENT_ID,
-            });
-            payload = ticket.getPayload();
-        } catch (verifyError) {
-            console.warn('Google verify failed, attempting fallback decode (DEV ONLY):', verifyError.message);
-            // Fallback for dev: manually decode JWT parts
-            // DANGEROUS: Do not use in production without real verification!
+        // Method 1: Try Supabase token — the OAuth flow sends a Supabase access_token
+        try {
+            const { createClient } = require('@supabase/supabase-js');
+            const supabaseAdmin = createClient(
+                process.env.SUPABASE_URL,
+                process.env.SUPABASE_SERVICE_ROLE_KEY
+            );
+            const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(idToken);
+
+            if (!userError && userData?.user?.email) {
+                payload = {
+                    email: userData.user.email,
+                    name: userData.user.user_metadata?.full_name || userData.user.user_metadata?.name || userData.user.email.split('@')[0],
+                    picture: userData.user.user_metadata?.avatar_url || userData.user.user_metadata?.picture || null,
+                    sub: userData.user.id,
+                };
+                console.log('Verified via Supabase token:', payload.email);
+            }
+        } catch (supaErr) {
+            console.log('Supabase token verify skipped:', supaErr.message);
+        }
+
+        // Method 2: Try Google OAuth verification
+        if (!payload) {
+            try {
+                const { OAuth2Client } = require('google-auth-library');
+                const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+                const ticket = await client.verifyIdToken({
+                    idToken,
+                    audience: process.env.GOOGLE_CLIENT_ID,
+                });
+                payload = ticket.getPayload();
+                console.log('Verified via Google OAuth:', payload.email);
+            } catch (verifyError) {
+                console.warn('Google verify failed:', verifyError.message);
+            }
+        }
+
+        // Method 3: Fallback JWT decode (DEV ONLY)
+        if (!payload) {
+            console.warn('Attempting fallback JWT decode (DEV ONLY)');
             const parts = idToken.split('.');
             if (parts.length === 3) {
-                payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-            } else {
-                throw new Error('Invalid token format');
+                const decoded = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+                if (decoded.email) {
+                    payload = decoded;
+                } else if (decoded.user_metadata?.email) {
+                    payload = {
+                        email: decoded.user_metadata.email,
+                        name: decoded.user_metadata.full_name || decoded.user_metadata.name,
+                        picture: decoded.user_metadata.avatar_url,
+                        sub: decoded.sub,
+                    };
+                }
             }
         }
 
         if (!payload || !payload.email) {
             return res.status(400).json({
                 success: false,
-                error: 'Invalid Google token'
+                error: 'Invalid token - could not extract user information'
             });
         }
 
         const { email, name, picture, sub: googleId } = payload;
-        console.log(`Google Login for: ${email} (${name})`);
+        console.log(`Google/OAuth Login for: ${email} (${name})`);
 
         // Check if user exists
         const { data: user, error } = await supabase
@@ -506,16 +539,7 @@ exports.googleLogin = async (req, res) => {
 
         // If user doesn't exist, create one
         if (!targetUser) {
-            // Allow creation for USER role
-            // For VENDOR, we ideally want them to fill details. 
-            // For now, if role is VENDOR, we might create a PENDING account or reject.
-
             const userRole = role === 'VENDOR' ? 'VENDOR' : 'USER';
-
-            // If Vendor, we need extra details. 
-            // Strategy: Create account but it might be stuck in PENDING or incomplete state.
-            // Better: If Vendor, require normal registration? 
-            // Let's create a basic account for now to enable login.
 
             const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
             const hashedPassword = await bcrypt.hash(randomPassword, 10);
@@ -523,19 +547,11 @@ exports.googleLogin = async (req, res) => {
             const userData = {
                 name: name || 'Google User',
                 email,
-                password: hashedPassword, // Dummy password
+                password: hashedPassword,
                 role: userRole,
                 is_premium: false,
                 approval_status: userRole === 'VENDOR' ? 'PENDING' : 'APPROVED',
-                // Store google_id if we had a column, but we don't seen to have it in migration files checked so far.
-                // We'll rely on email. 
             };
-
-            // For vendors, we are missing business fields. 
-            // If strict validation exists in DB, this might fail.
-            // Seeing code above, 'register' checks fields manually before insert.
-            // DB constraints might be nullable for those? 
-            // Let's try to insert.
 
             const { data: newUser, error: createError } = await supabase
                 .from('users')
@@ -557,8 +573,6 @@ exports.googleLogin = async (req, res) => {
         // Check approval for vendors
         if (targetUser.role === 'VENDOR') {
             if (targetUser.approval_status === 'PENDING') {
-                // If we just created it, it's pending.
-                // If it existed, it might be pending.
                 return res.status(403).json({
                     success: false,
                     error: 'Your account is pending approval from admin.',
