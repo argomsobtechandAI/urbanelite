@@ -363,16 +363,29 @@ const getNotificationSettings = async (req, res) => {
 
 const updateNotificationSettings = async (req, res) => {
     try {
-        const { data: settings, error } = await supabase
+        // Step 1: Try to update the existing row
+        const { data: updated, error: updateError } = await supabase
             .from('notification_settings')
-            .upsert({ user_id: req.user.id, ...req.body })
+            .update(req.body)
+            .eq('user_id', req.user.id)
             .select()
             .single();
 
-        if (error) throw error;
-        res.json(settings);
+        if (updated) {
+            return res.json(updated);
+        }
+
+        // Step 2: No existing row — insert a new one with defaults + overrides
+        const { data: inserted, error: insertError } = await supabase
+            .from('notification_settings')
+            .insert({ user_id: req.user.id, ...req.body })
+            .select()
+            .single();
+
+        if (insertError) throw insertError;
+        res.json(inserted);
     } catch (error) {
-        console.error(error);
+        console.error('updateNotificationSettings error:', error);
         res.status(500).json({ message: 'Server Error' });
     }
 };
