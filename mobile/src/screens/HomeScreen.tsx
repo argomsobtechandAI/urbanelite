@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     logoIcon: { width: 40, height: 40, backgroundColor: Theme.colors.primary, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
     logoIconText: { fontSize: 24 },
     headerTitle: { fontSize: 24, fontWeight: Theme.typography.weights.bold },
-    titleOlfix: { color: Theme.colors.navy, fontWeight: '900', letterSpacing: -0.5 },
+    titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900', fontStyle: 'italic', letterSpacing: -0.5 },
 
     headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     iconButton: {
