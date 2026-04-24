@@ -19,11 +19,12 @@ const buildDays = () => {
         const d = new Date(now);
         d.setDate(now.getDate() + i);
         const weekday = d.toLocaleDateString('en-IN', { weekday: 'short' });
-        const dayNum = d.getDate();
-        const month = d.toLocaleDateString('en-IN', { month: 'short' });
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const year = d.getFullYear();
         // ISO date string for the API query (YYYY-MM-DD)
         const iso = d.toISOString().split('T')[0];
-        const label = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : `${weekday}, ${dayNum} ${month}`;
+        const label = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : `${day}-${month}-${year}`;
         days.push({ label, value: iso });
     }
     return days;

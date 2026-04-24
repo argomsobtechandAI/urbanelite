@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Platform, PermissionsAndroid } from 'react-native';
+const RNAndroidLocationEnabler = require('react-native-android-location-enabler').default || require('react-native-android-location-enabler');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { Theme } from '../../theme';
@@ -7,6 +8,7 @@ import { RootStackParamList } from '../../types/navigation';
 import { vendorAPI } from '../../services/api';
 import { Calendar, Clock, IndianRupee } from 'lucide-react-native';
 import NotificationBell from '../../components/NotificationBell';
+import { formatDisplayDate } from '../../utils/dateUtils';
 
 const LOGO_IMG = require('../../assets/images/logo.png');
 
@@ -17,9 +19,37 @@ const VendorHomeScreen = () => {
 
     useFocusEffect(
         useCallback(() => {
+            checkLocationPermission();
             fetchDashboard();
         }, [])
     );
+
+    const checkLocationPermission = async () => {
+        if (Platform.OS !== 'android') return;
+        try {
+            await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+                {
+                    title: 'Location Permission Required',
+                    message: 'OLFIX requires location access to find jobs near you.',
+                    buttonNeutral: 'Ask Me Later',
+                    buttonNegative: 'Cancel',
+                    buttonPositive: 'OK',
+                }
+            );
+            // Try to enable GPS after permission
+            try {
+                await RNAndroidLocationEnabler.promptForEnableLocationIfNeeded({
+                    interval: 10000,
+                    fastInterval: 5000,
+                });
+            } catch {
+                // GPS enable declined — do NOT retry recursively
+            }
+        } catch (err) {
+            console.warn('Location permission not granted:', err);
+        }
+    };
 
     const fetchDashboard = async () => {
         try {
@@ -113,7 +143,7 @@ const VendorHomeScreen = () => {
                                         <Text style={styles.statusText}>{booking.status}</Text>
                                     </View>
                                 </View>
-                                <Text style={styles.bookingDate}>{booking.date} • {booking.time_slot}</Text>
+                                <Text style={styles.bookingDate}>{formatDisplayDate(booking.date)} • {booking.time_slot}</Text>
                                 <Text style={styles.bookingPrice}>{booking.price}</Text>
                             </View>
                         ))

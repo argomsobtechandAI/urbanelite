@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { adminAPI } from '@/lib/api';
-import { Plus, Pencil, Trash2, Search, Loader2, X, ImageIcon } from 'lucide-react';
+import { Plus, Pencil, Search, Loader2, X, ImageIcon, ToggleLeft, ToggleRight } from 'lucide-react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import ImageUpload from '@/components/ImageUpload';
@@ -12,6 +12,7 @@ interface Category {
     name: string;
     slug: string;
     image: string | null;
+    is_active: boolean;
     _count?: {
         services: number;
     };
@@ -69,14 +70,15 @@ export default function ServicesPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Delete this category?')) return;
+    const handleToggleActive = async (category: Category) => {
+        const action = category.is_active ? 'disable' : 'enable';
+        if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} category "${category.name}"?`)) return;
         try {
-            await adminAPI.deleteServiceCategory(id);
-            fetchCategories();
+            await adminAPI.updateServiceCategory(category.id, { is_active: !category.is_active });
+            setCategories(prev => prev.map(c => c.id === category.id ? { ...c, is_active: !c.is_active } : c));
         } catch (error) {
-            console.error('Error deleting category:', error);
-            alert('Failed to delete category');
+            console.error('Error toggling category:', error);
+            alert('Failed to update category status');
         }
     };
 
@@ -132,7 +134,7 @@ export default function ServicesPage() {
                                     <th className="px-6 py-4 font-semibold text-gray-700 w-[80px]">Icon</th>
                                     <th className="px-6 py-4 font-semibold text-gray-700">Name</th>
                                     <th className="px-6 py-4 font-semibold text-gray-700">Slug</th>
-                                    <th className="px-6 py-4 font-semibold text-gray-700">Services</th>
+                                    <th className="px-6 py-4 font-semibold text-gray-700">Status</th>
                                     <th className="px-6 py-4 font-semibold text-gray-700 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -169,7 +171,13 @@ export default function ServicesPage() {
                                             </td>
                                             <td className="px-6 py-4 font-semibold text-gray-900">{category.name}</td>
                                             <td className="px-6 py-4 text-gray-500 font-mono text-xs">{category.slug}</td>
-                                            <td className="px-6 py-4 text-gray-900">{category._count?.services || 0}</td>
+                                            <td className="px-6 py-4">
+                                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
+                                                    category.is_active !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'
+                                                }`}>
+                                                    {category.is_active !== false ? '● Enabled' : '● Disabled'}
+                                                </span>
+                                            </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <Link
@@ -181,14 +189,23 @@ export default function ServicesPage() {
                                                     <button
                                                         onClick={() => openEdit(category)}
                                                         className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        title="Edit"
                                                     >
                                                         <Pencil className="h-4 w-4" />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDelete(category.id)}
-                                                        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        onClick={() => handleToggleActive(category)}
+                                                        className={`p-2 rounded-lg transition-colors ${
+                                                            category.is_active !== false
+                                                                ? 'text-green-600 hover:bg-green-50'
+                                                                : 'text-gray-400 hover:bg-gray-100'
+                                                        }`}
+                                                        title={category.is_active !== false ? 'Disable' : 'Enable'}
                                                     >
-                                                        <Trash2 className="h-4 w-4" />
+                                                        {category.is_active !== false
+                                                            ? <ToggleRight className="h-5 w-5" />
+                                                            : <ToggleLeft className="h-5 w-5" />
+                                                        }
                                                     </button>
                                                 </div>
                                             </td>

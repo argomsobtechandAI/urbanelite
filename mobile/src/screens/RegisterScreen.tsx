@@ -14,6 +14,7 @@ import {
     FlatList,
     PermissionsAndroid,
 } from 'react-native';
+const RNAndroidLocationEnabler = require('react-native-android-location-enabler').default || require('react-native-android-location-enabler');
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { API_URL } from '@env';
@@ -72,7 +73,27 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         if (selectedRole === 'VENDOR') {
             fetchCategories();
         }
+        checkLocation();
     }, [selectedRole]);
+
+    const checkLocation = async () => {
+        if (Platform.OS === 'android') {
+            try {
+                await RNAndroidLocationEnabler.promptForEnableLocationIfNeeded({
+                    interval: 10000,
+                    fastInterval: 5000,
+                });
+                const granted = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+                );
+                if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+                    checkLocation();
+                }
+            } catch (err) {
+                checkLocation();
+            }
+        }
+    };
 
     const fetchCategories = async () => {
         setLoadingCategories(true);
@@ -308,6 +329,17 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             return;
         }
 
+        // Validate phone number
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phone) {
+            Alert.alert('Error', 'Phone number is required');
+            return;
+        }
+        if (!phoneRegex.test(phone)) {
+            Alert.alert('Error', 'Please enter a valid 10-digit mobile number');
+            return;
+        }
+
         // Validate vendor-specific fields
         if (selectedRole === 'VENDOR') {
             if (!serviceCategory || !subCategory || serviceItems.length === 0 || !businessName || !businessAddress || !aadhaarUrl || !panUrl) {
@@ -404,11 +436,12 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
                         <TextInput
                             style={styles.input}
-                            placeholder="Phone (Optional)"
+                            placeholder="Phone (10 digits) *"
                             placeholderTextColor="#94A3B8"
                             value={phone}
-                            onChangeText={setPhone}
+                            onChangeText={(text) => setPhone(text.replace(/[^0-9]/g, '').slice(0, 10))}
                             keyboardType="phone-pad"
+                            maxLength={10}
                             editable={!loading}
                         />
 

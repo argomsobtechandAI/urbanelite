@@ -445,7 +445,7 @@ exports.createServiceCategory = async (req, res) => {
 exports.updateServiceCategory = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, image } = req.body;
+        const { name, image, is_active } = req.body;
 
         const updates = {};
         if (name) {
@@ -453,6 +453,7 @@ exports.updateServiceCategory = async (req, res) => {
             updates.slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
         }
         if (image !== undefined) updates.image = image;
+        if (is_active !== undefined) updates.is_active = is_active;
 
         const { data: category, error } = await supabase
             .from('service_categories')
@@ -987,3 +988,66 @@ exports.updateVendorServicePricing = async (req, res) => {
     }
 };
 
+// Toggle user account status (enable/disable fraud users)
+exports.toggleUserStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { is_active } = req.body;
+
+        if (is_active === undefined) {
+            return res.status(400).json({ success: false, error: 'is_active is required' });
+        }
+
+        const { data: user, error } = await supabase
+            .from('users')
+            .update({ is_active })
+            .eq('id', id)
+            .eq('role', 'USER')
+            .select('id, name, email, is_active')
+            .single();
+
+        if (error) throw error;
+        if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+        res.json({
+            success: true,
+            message: `User ${is_active ? 'enabled' : 'disabled'} successfully`,
+            user
+        });
+    } catch (error) {
+        console.error('Error toggling user status:', error);
+        res.status(500).json({ success: false, error: 'Failed to update user status' });
+    }
+};
+
+// Toggle vendor account status (enable/disable fraud vendors)
+exports.toggleVendorStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { is_active } = req.body;
+
+        if (is_active === undefined) {
+            return res.status(400).json({ success: false, error: 'is_active is required' });
+        }
+
+        const { data: vendor, error } = await supabase
+            .from('users')
+            .update({ is_active })
+            .eq('id', id)
+            .eq('role', 'VENDOR')
+            .select('id, name, email, is_active, approval_status')
+            .single();
+
+        if (error) throw error;
+        if (!vendor) return res.status(404).json({ success: false, error: 'Vendor not found' });
+
+        res.json({
+            success: true,
+            message: `Vendor ${is_active ? 'enabled' : 'disabled'} successfully`,
+            vendor
+        });
+    } catch (error) {
+        console.error('Error toggling vendor status:', error);
+        res.status(500).json({ success: false, error: 'Failed to update vendor status' });
+    }
+};

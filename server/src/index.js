@@ -29,24 +29,26 @@ const homeRoutes = require('./routes/homeRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const userRoutes = require('./routes/userRoutes'); // Keep existing userRoutes
+const userRoutes = require('./routes/userRoutes');
 const vendorRoutes = require('./routes/vendorRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const offersRoutes = require('./routes/offersRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const adminRequestRoutes = require('./routes/adminRequestRoutes');
+const ratingRoutes = require('./routes/ratingRoutes');
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/bookings', bookingRoutes);
-app.use('/api/user', userRoutes); // Keep existing userRoutes
+app.use('/api/user', userRoutes);
 app.use('/api/vendor', vendorRoutes);
-app.use('/api/home', homeRoutes); // Handles /api/home and /api/services
+app.use('/api/home', homeRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/offers', offersRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/admin-requests', adminRequestRoutes);
+app.use('/api/ratings', ratingRoutes);
 
 
 // 404 Handler

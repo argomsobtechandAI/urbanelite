@@ -31,3 +31,26 @@ ON storage.objects FOR ALL
 TO public
 USING (bucket_id = 'profile-images')
 WITH CHECK (bucket_id = 'profile-images');
+
+-- 3. Offer Media
+DROP POLICY IF EXISTS "offer_media_public_read" ON storage.objects;
+DROP POLICY IF EXISTS "offer_media_authenticated_upload" ON storage.objects;
+DROP POLICY IF EXISTS "offer_media_allow_all" ON storage.objects;
+
+CREATE POLICY "offer_media_allow_all"
+ON storage.objects FOR ALL
+TO public
+USING (bucket_id = 'offer-media')
+WITH CHECK (bucket_id = 'offer-media');
+
+-- 4. Service Icons
+DROP POLICY IF EXISTS "service_icons_public_read" ON storage.objects;
+DROP POLICY IF EXISTS "service_icons_authenticated_upload" ON storage.objects;
+DROP POLICY IF EXISTS "service_icons_authenticated_update" ON storage.objects;
+DROP POLICY IF EXISTS "service_icons_allow_all" ON storage.objects;
+
+CREATE POLICY "service_icons_allow_all"
+ON storage.objects FOR ALL
+TO public
+USING (bucket_id = 'service-icons')
+WITH CHECK (bucket_id = 'service-icons');

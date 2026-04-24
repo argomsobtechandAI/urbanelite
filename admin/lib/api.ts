@@ -52,6 +52,7 @@ export const adminAPI = {
         api.get('/admin/users', { params }),
     getUserDetails: (id: string) => api.get(`/admin/users/${id}`),
     updateUser: (id: string, data: any) => api.put(`/admin/users/${id}`, data),
+    toggleUserStatus: (id: string, is_active: boolean) => api.patch(`/admin/users/${id}/toggle-status`, { is_active }),
 
     // Bookings
     getBookings: (params?: { page?: number; limit?: number; status?: string; search?: string }) =>
@@ -89,6 +90,7 @@ export const adminAPI = {
     getAllVendors: (params?: { status?: string }) => api.get('/admin/vendors', { params }),
     approveVendor: (id: string) => api.put(`/admin/vendors/${id}/approve`),
     rejectVendor: (id: string) => api.put(`/admin/vendors/${id}/reject`),
+    toggleVendorStatus: (id: string, is_active: boolean) => api.patch(`/admin/vendors/${id}/toggle-status`, { is_active }),
     assignServiceToVendor: (data: { vendorId: string; serviceItemId: string; customPrice?: string }) =>
         api.post('/admin/services/assign-vendor', data),
     // Vendor Service Pricing (Admin control)

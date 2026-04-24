@@ -1,19 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SectionList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { ArrowLeft, ArrowDownLeft, ArrowUpRight } from 'lucide-react-native';
 import { Theme } from '../theme';
 import { userAPI } from '../services/api';
+import { formatDisplayDate } from '../utils/dateUtils';
 
 const WalletHistoryScreen = () => {
     const navigation = useNavigation();
     const [transactions, setTransactions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        loadTransactions();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            loadTransactions();
+        }, [])
+    );
 
     const loadTransactions = async () => {
         try {
@@ -42,7 +45,7 @@ const WalletHistoryScreen = () => {
             } else if (date.toDateString() === yesterday.toDateString()) {
                 dateLabel = 'Yesterday';
             } else {
-                dateLabel = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+                dateLabel = formatDisplayDate(date);
             }
 
             if (!grouped[dateLabel]) {

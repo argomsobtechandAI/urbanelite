@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { Theme } from '../theme';
 import { RootStackParamList } from '../types/navigation';
 import { userAPI } from '../services/api';
 import NotificationBell from '../components/NotificationBell';
+import { formatDisplayDate } from '../utils/dateUtils';
 
 const BookingsScreen = () => {
     const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -13,19 +14,24 @@ const BookingsScreen = () => {
     const [bookings, setBookings] = useState<any>({ upcoming: [], completed: [], cancelled: [] });
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchBookings = async () => {
-            try {
-                const response = await userAPI.getBookings();
-                setBookings(response.data);
-            } catch (error) {
-                console.error('Failed to fetch bookings', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchBookings();
-    }, []);
+    const fetchBookings = async () => {
+        try {
+            const response = await userAPI.getBookings();
+            setBookings(response.data);
+        } catch (error) {
+            console.error('Failed to fetch bookings', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Reset to 'upcoming' tab and fetch bookings every time screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            setActiveTab('upcoming');
+            fetchBookings();
+        }, [])
+    );
 
     const renderHeader = () => (
         <View style={styles.header}>
@@ -65,7 +71,7 @@ const BookingsScreen = () => {
             <View style={styles.bookingHeader}>
                 <View style={styles.bookingServiceInfo}>
                     <Text style={styles.bookingServiceName}>{item.service}</Text>
-                    <Text style={styles.bookingDate}>{item.date}</Text>
+                    <Text style={styles.bookingDate}>{formatDisplayDate(item.date)}</Text>
                 </View>
                 <View style={styles.bookingStatusBox}>
                     <Text style={styles.bookingStatusText}>{item.status}</Text>
@@ -132,7 +138,6 @@ const styles = StyleSheet.create({
     logoIcon: { width: 40, height: 40, backgroundColor: Theme.colors.brandOrange, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
     logoIconText: { fontSize: 24, color: 'white' },
     headerTitle: { fontSize: 22, fontWeight: 'bold' },
-    titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900' },
     titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900', fontStyle: 'italic' },
     notificationButton: { width: 40, height: 40, backgroundColor: Theme.colors.searchBg, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
     notificationIcon: { width: 20, height: 20, tintColor: Theme.colors.textLight },

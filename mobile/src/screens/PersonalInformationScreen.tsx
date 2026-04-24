@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { ArrowLeft, Camera, Mail, Phone, User, MapPin } from 'lucide-react-native';
 import { Theme } from '../theme';
 import { userAPI } from '../services/api';
@@ -16,9 +16,11 @@ const PersonalInformationScreen = () => {
         location: ''
     });
 
-    useEffect(() => {
-        loadProfile();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            loadProfile();
+        }, [])
+    );
 
     const loadProfile = async () => {
         try {
@@ -33,6 +35,12 @@ const PersonalInformationScreen = () => {
     };
 
     const handleSave = async () => {
+        const phoneRegex = /^[0-9]{10}$/;
+        if (userData.phone && !phoneRegex.test(userData.phone)) {
+            Alert.alert('Error', 'Please enter a valid 10-digit mobile number');
+            return;
+        }
+
         setLoading(true);
         try {
             await userAPI.updateProfile(userData);
@@ -106,10 +114,11 @@ const PersonalInformationScreen = () => {
                             <Phone size={20} color={Theme.colors.textLight} style={styles.inputIcon} />
                             <TextInput
                                 value={userData.phone}
-                                onChangeText={(text) => setUserData({ ...userData, phone: text })}
+                                onChangeText={(text) => setUserData({ ...userData, phone: text.replace(/[^0-9]/g, '').slice(0, 10) })}
                                 style={styles.input}
                                 placeholder="Enter your phone"
                                 keyboardType="phone-pad"
+                                maxLength={10}
                                 placeholderTextColor={Theme.colors.textLight}
                             />
                         </View>

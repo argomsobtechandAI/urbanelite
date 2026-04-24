@@ -1,4 +1,5 @@
 export type RootStackParamList = {
+    TermsConditions: { role?: 'USER' | 'VENDOR' };
     Login: undefined;
     Register: undefined;
     ForgotPassword: { email?: string };
@@ -38,6 +39,7 @@ export type RootStackParamList = {
     VendorTabs: undefined;
     VendorCreateOffer: undefined;
     BookingDetails: { bookingId: string };
+    RatingFeedback: { bookingId: string; reviewedId: string; reviewedName: string; serviceName: string };
     VendorPersonalInformation: undefined;
     VendorNotificationSettings: undefined;
     VendorSupportHelp: undefined;

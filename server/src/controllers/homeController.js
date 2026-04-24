@@ -214,12 +214,75 @@ const getServiceDetailById = async (req, res) => {
     }
 };
 
+// Global Search across Categories, Subcategories, and Service Items
+const search = async (req, res) => {
+    const { q } = req.query;
+    if (!q || q.length < 2) {
+        return res.json({ results: [] });
+    }
+
+    try {
+        const query = q.toLowerCase();
+
+        // 1. Search Categories
+        const { data: categories } = await supabase
+            .from('service_categories')
+            .select('id, name, slug, image')
+            .ilike('name', `%${query}%`);
+
+        // 2. Search Subcategories
+        const { data: subcategories } = await supabase
+            .from('service_subcategories')
+            .select('id, name, slug, image, category_id, service_categories(slug)')
+            .ilike('name', `%${query}%`);
+
+        // 3. Search Service Items
+        const { data: items } = await supabase
+            .from('service_items')
+            .select('id, title, subcategory_id, price, image, service_subcategories(slug)')
+            .ilike('title', `%${query}%`);
+
+        // Format results for the frontend
+        const results = [
+            ...(categories || []).map(c => ({
+                id: c.id,
+                name: c.name,
+                type: 'CATEGORY',
+                slug: c.slug,
+                image: c.image
+            })),
+            ...(subcategories || []).map(s => ({
+                id: s.id,
+                name: s.name,
+                type: 'SUBCATEGORY',
+                slug: s.slug,
+                image: s.image,
+                categorySlug: s.service_categories?.slug
+            })),
+            ...(items || []).map(i => ({
+                id: i.id,
+                name: i.title,
+                type: 'SERVICE',
+                price: i.price,
+                image: i.image,
+                subcategorySlug: i.service_subcategories?.slug
+            }))
+        ];
+
+        res.json({ results: results.slice(0, 15) }); // Limit to top 15 results
+    } catch (error) {
+        console.error('Search error:', error);
+        res.status(500).json({ message: 'Search failed' });
+    }
+};
+
 module.exports = {
     getHomeData,
     getSubCategories,
     getServiceListing,
     getServiceDetailById,
     getServiceCategories,
-    getSubCategoriesById,  // New
-    getServiceListingById  // New
+    getSubCategoriesById,
+    getServiceListingById,
+    search
 };

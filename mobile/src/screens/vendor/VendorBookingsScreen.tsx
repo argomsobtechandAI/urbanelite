@@ -5,6 +5,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { formatDisplayDate } from '../../utils/dateUtils';
 
 const VendorBookingsScreen = () => {
     const navigation = useNavigation<any>();
@@ -12,11 +13,17 @@ const VendorBookingsScreen = () => {
     const [bookings, setBookings] = useState<any[]>([]);
     const [selectedTab, setSelectedTab] = useState<'PENDING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED'>('PENDING');
 
+    // Reset to PENDING tab every time screen comes into focus, then fetch
     useFocusEffect(
         useCallback(() => {
-            fetchBookings();
-        }, [selectedTab])
+            setSelectedTab('PENDING');
+        }, [])
     );
+
+    // Re-fetch whenever selected tab changes
+    useEffect(() => {
+        fetchBookings();
+    }, [selectedTab]);
 
     const fetchBookings = async () => {
         try {
@@ -100,7 +107,7 @@ const VendorBookingsScreen = () => {
                                 </View>
                             </View>
 
-                            <Text style={styles.bookingDate}>{booking.date} • {booking.time_slot}</Text>
+                            <Text style={styles.bookingDate}>{formatDisplayDate(booking.date)} • {booking.time_slot}</Text>
                             <Text style={styles.bookingLocation}>{booking.location?.address || 'No location'}</Text>
                             <Text style={styles.bookingPrice}>{booking.price}</Text>
 

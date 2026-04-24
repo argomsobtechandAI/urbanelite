@@ -7,7 +7,7 @@ import { Theme } from '../theme';
 import { userAPI } from '../services/api';
 
 const AddAddressScreen = () => {
-    const navigation = useNavigation();
+    const navigation = useNavigation<any>();
 
     const [type, setType] = useState('Home');
     const [address, setAddress] = useState('');

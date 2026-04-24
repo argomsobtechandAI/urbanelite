@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View, Text, StyleSheet, Image, TouchableOpacity,
     ScrollView, ActivityIndicator, Alert, Platform, PermissionsAndroid,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { Theme } from '../theme';
 import { RootStackParamList } from '../types/navigation';
 import { userAPI } from '../services/api';
@@ -31,11 +31,11 @@ const ProfileScreen = () => {
     const [loading, setLoading] = useState(true);
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-    useEffect(() => {
-        const unsubscribe = (navigation as any).addListener?.('focus', fetchProfile);
-        fetchProfile();
-        return unsubscribe;
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            fetchProfile();
+        }, [])
+    );
 
     const fetchProfile = async () => {
         try {

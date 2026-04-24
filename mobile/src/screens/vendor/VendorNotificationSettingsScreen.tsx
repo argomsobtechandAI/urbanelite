@@ -10,18 +10,19 @@ const VendorNotificationSettingsScreen = () => {
     const navigation = useNavigation();
     const [settings, setSettings] = useState({
         bookingUpdates: true,
-        offersPromotions: true,
-        serviceReminders: true,
-        accountSecurity: true,
+        offers: true,
+        reminders: true,
+        security: true,
         newLeads: true,
         payouts: true
     });
 
+    // Maps UI key -> actual DB column name
     const MAPPING: { [key: string]: string } = {
         bookingUpdates: 'booking_updates',
-        offersPromotions: 'offers_promotions',
-        serviceReminders: 'service_reminders',
-        accountSecurity: 'account_security',
+        offers: 'offers',
+        reminders: 'reminders',
+        security: 'security',
         newLeads: 'new_leads',
         payouts: 'payouts'
     };
@@ -127,8 +128,8 @@ const VendorNotificationSettingsScreen = () => {
                     icon={<ShieldCheck />}
                     title="Account Security"
                     description="Alerts for new logins and password changes"
-                    value={settings.accountSecurity}
-                    onValueChange={(val: boolean) => toggleSwitch('accountSecurity', val)}
+                    value={settings.security}
+                    onValueChange={(val: boolean) => toggleSwitch('security', val)}
                     color="#F59E0B"
                 />
             </View>

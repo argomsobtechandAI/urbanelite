@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { Theme } from '../theme';
 import { RootStackParamList } from '../types/navigation';
 import { userAPI } from '../services/api';
@@ -13,22 +13,24 @@ const WalletScreen = () => {
     const [transactions, setTransactions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchWalletData = async () => {
-            try {
-                const response = await userAPI.getWallet();
-                // Ensure only one rupee symbol by stripping all and adding one
-                const cleanBalance = response.data.balance ? response.data.balance.toString().replace(/₹/g, '').trim() : '0';
-                setBalance(`₹${cleanBalance}`);
-                setTransactions(response.data.transactions);
-            } catch (error) {
-                console.error('Failed to fetch wallet data', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchWalletData();
-    }, []);
+    const fetchWalletData = async () => {
+        try {
+            const response = await userAPI.getWallet();
+            const cleanBalance = response.data.balance ? response.data.balance.toString().replace(/₹/g, '').trim() : '0';
+            setBalance(`₹${cleanBalance}`);
+            setTransactions(response.data.transactions);
+        } catch (error) {
+            console.error('Failed to fetch wallet data', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchWalletData();
+        }, [])
+    );
 
     const renderHeader = () => (
         <View style={styles.header}>

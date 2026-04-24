@@ -48,6 +48,8 @@ import ServiceListingScreen from './src/screens/ServiceListingScreen';
 import OthersServiceRequestScreen from './src/screens/OthersServiceRequestScreen';
 import OthersRequestSuccessScreen from './src/screens/OthersRequestSuccessScreen';
 import MyOthersRequestsScreen from './src/screens/MyOthersRequestsScreen';
+import TermsConditionsScreen from './src/screens/TermsConditionsScreen';
+import RatingFeedbackScreen from './src/screens/RatingFeedbackScreen';
 
 const Stack = createStackNavigator();
 
@@ -129,6 +131,8 @@ export const RootNavigator = () => {
       <Stack.Screen name="OthersServiceRequest" component={OthersServiceRequestScreen} />
       <Stack.Screen name="OthersRequestSuccess" component={OthersRequestSuccessScreen} options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="MyOthersRequests" component={MyOthersRequestsScreen} />
+      <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} />
+      <Stack.Screen name="RatingFeedback" component={RatingFeedbackScreen} />
     </Stack.Navigator>
   );
 };
@@ -136,6 +140,35 @@ export const RootNavigator = () => {
 // ── Root App ──────────────────────────────────────────────────────────────────
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);
+
+  // Android hardware back button handler
+  useEffect(() => {
+    const onBackPress = () => {
+      const nav = navigationRef.current;
+      if (!nav) return false;
+
+      // If we can go back within the navigation stack, do so
+      if (nav.canGoBack()) {
+        nav.goBack();
+        return true; // prevent default (app close)
+      }
+
+      // At root (MainTabs / VendorTabs) — confirm exit
+      Alert.alert(
+        'Exit App',
+        'Are you sure you want to exit?',
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => {} },
+          { text: 'Exit', style: 'destructive', onPress: () => BackHandler.exitApp() },
+        ],
+        { cancelable: true }
+      );
+      return true; // prevent default while alert is shown
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, []);
 
   if (showSplash) {
     return (

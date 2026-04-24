@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Alert } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { Theme } from '../theme';
 import { RootStackParamList } from '../types/navigation';
 import { bookingAPI } from '../services/api';
-import { MapPin, Calendar, Clock, MessageCircle, XCircle } from 'lucide-react-native';
+import { MapPin, Calendar, Clock, MessageCircle, XCircle, Star, Flag, Wrench } from 'lucide-react-native';
 
 type BookingDetailsRouteProp = RouteProp<RootStackParamList, 'BookingDetails'>;
 
@@ -18,9 +18,11 @@ const BookingDetailsScreen = () => {
     const [booking, setBooking] = useState<any>(null);
     const [cancelling, setCancelling] = useState(false);
 
-    useEffect(() => {
-        fetchBookingDetails();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            fetchBookingDetails();
+        }, [])
+    );
 
     const fetchBookingDetails = async () => {
         try {
@@ -34,17 +36,51 @@ const BookingDetailsScreen = () => {
     };
 
     const handleCancel = async () => {
-        setCancelling(true);
-        try {
-            await bookingAPI.cancelBooking(bookingId);
-            Alert.alert('Booking cancelled successfully');
-            navigation.goBack();
-        } catch (error) {
-            Alert.alert('Failed to cancel booking');
-            console.error(error);
-        } finally {
-            setCancelling(false);
+        Alert.alert('Cancel Booking', 'Are you sure you want to cancel this booking?', [
+            { text: 'No', style: 'cancel' },
+            {
+                text: 'Yes, Cancel', style: 'destructive',
+                onPress: async () => {
+                    setCancelling(true);
+                    try {
+                        await bookingAPI.cancelBooking(bookingId);
+                        Alert.alert('✅ Booking cancelled successfully');
+                        navigation.goBack();
+                    } catch (error) {
+                        Alert.alert('Failed to cancel booking');
+                        console.error(error);
+                    } finally {
+                        setCancelling(false);
+                    }
+                }
+            }
+        ]);
+    };
+
+    const handleRateAndReview = () => {
+        if (!booking?.professional?.id && !booking?.vendor_id) {
+            Alert.alert('No service provider found for this booking.');
+            return;
         }
+        navigation.navigate('RatingFeedback', {
+            bookingId,
+            reviewedId: booking?.vendor_id || booking?.professional?.id,
+            reviewedName: booking?.professional?.name || booking?.professional_name || 'Service Provider',
+            serviceName: booking?.service || booking?.service_name || 'Service',
+        });
+    };
+
+    const handleReport = () => {
+        if (!booking?.vendor_id && !booking?.professional?.id) {
+            Alert.alert('No service provider to report.');
+            return;
+        }
+        navigation.navigate('RatingFeedback', {
+            bookingId,
+            reviewedId: booking?.vendor_id || booking?.professional?.id,
+            reviewedName: booking?.professional?.name || booking?.professional_name || 'Service Provider',
+            serviceName: booking?.service || booking?.service_name || 'Service',
+        });
     };
 
     if (loading) {
@@ -66,7 +102,7 @@ const BookingDetailsScreen = () => {
     const getStatusColor = (status: string) => {
         switch (status?.toUpperCase()) {
             case 'PENDING': return '#F59E0B';
-            case 'CONFIRMED': return '#F59E0B'; // Treat as PENDING
+            case 'CONFIRMED': return '#F59E0B';
             case 'ACCEPTED': return '#3B82F6';
             case 'ACTIVE': return '#10B981';
             case 'COMPLETED': return '#059669';
@@ -74,6 +110,9 @@ const BookingDetailsScreen = () => {
             default: return '#6B7280';
         }
     };
+
+    const isCompleted = booking.status?.toUpperCase() === 'COMPLETED';
+    const isActive = ['PENDING', 'CONFIRMED', 'ACCEPTED'].includes(booking.status?.toUpperCase());
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -113,7 +152,7 @@ const BookingDetailsScreen = () => {
                 {/* Professional Section */}
                 {booking.professional && booking.professional.name && (
                     <View style={styles.card}>
-                        <Text style={styles.sectionTitle}>Professional</Text>
+                        <Text style={styles.sectionTitle}>Service Provider</Text>
                         <View style={styles.proRow}>
                             <View style={styles.proAvatar}>
                                 <Text style={styles.proInitials}>{booking.professional.name[0]}</Text>
@@ -144,9 +183,42 @@ const BookingDetailsScreen = () => {
                     </View>
                 </View>
 
-                {/* Actions - Debugging: Force Show if Status Exists */}
-                {booking.status && (
-                    <View style={styles.actions}>
+                {/* Part Replacement Notice */}
+                <View style={styles.partsNotice}>
+                    <Wrench size={18} color={Theme.colors.brandOrange} />
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.partsNoticeTitle}>Part Replacement Policy</Text>
+                        <Text style={styles.partsNoticeText}>
+                            Our service charge covers only the labour. If parts need replacement, the cost is paid directly to the service provider — or you may provide the parts yourself.
+                        </Text>
+                    </View>
+                </View>
+
+                {/* Actions based on status */}
+                <View style={styles.actions}>
+                    {/* Completed: Show Rate & Report buttons */}
+                    {isCompleted && (
+                        <>
+                            <TouchableOpacity
+                                style={[styles.actionBtn, { backgroundColor: '#FEF3C7' }]}
+                                onPress={handleRateAndReview}
+                            >
+                                <Star size={20} color="#D97706" />
+                                <Text style={[styles.actionBtnText, { color: '#D97706' }]}>Rate & Give Feedback</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.actionBtn, { backgroundColor: '#FEE2E2', marginTop: 10 }]}
+                                onPress={handleReport}
+                            >
+                                <Flag size={20} color="#EF4444" />
+                                <Text style={[styles.actionBtnText, { color: '#EF4444' }]}>Report Misbehaviour</Text>
+                            </TouchableOpacity>
+                        </>
+                    )}
+
+                    {/* Active bookings: Show Cancel button */}
+                    {isActive && (
                         <TouchableOpacity
                             style={[styles.actionBtn, { backgroundColor: '#FEE2E2', marginTop: 15 }]}
                             onPress={handleCancel}
@@ -161,9 +233,8 @@ const BookingDetailsScreen = () => {
                                 </>
                             )}
                         </TouchableOpacity>
-                    </View>
-                )}
-
+                    )}
+                </View>
             </ScrollView>
         </SafeAreaView>
     );
@@ -197,9 +268,13 @@ const styles = StyleSheet.create({
     proSub: { fontSize: 13, color: '#718096' },
     chatBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: Theme.colors.brandOrange, justifyContent: 'center', alignItems: 'center' },
 
-    actions: { marginTop: 10 },
-    actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 12 },
-    actionBtnText: { color: 'white', fontWeight: 'bold', marginLeft: 10, fontSize: 16 },
+    partsNotice: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: '#FFF5F0', borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: Theme.colors.brandOrange + '30' },
+    partsNoticeTitle: { fontSize: 14, fontWeight: 'bold', color: '#C05621', marginBottom: 4 },
+    partsNoticeText: { fontSize: 12, color: '#744210', lineHeight: 18 },
+
+    actions: { marginTop: 4 },
+    actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderRadius: 12, gap: 10 },
+    actionBtnText: { fontWeight: 'bold', fontSize: 15 },
 });
 
 export default BookingDetailsScreen;

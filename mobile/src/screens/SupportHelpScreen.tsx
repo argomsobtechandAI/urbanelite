@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, LayoutAnimation, Platform, UIManager, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { ArrowLeft, Phone, Mail, ChevronRight, HelpCircle } from 'lucide-react-native';
+import { ArrowLeft, Phone, Mail, ChevronRight, HelpCircle, MessageSquare } from 'lucide-react-native';
 import { Theme } from '../theme';
 
 if (Platform.OS === 'android') {
@@ -13,6 +13,23 @@ if (Platform.OS === 'android') {
 
 const SupportHelpScreen = () => {
     const navigation = useNavigation();
+
+    const openWhatsApp = () => {
+        const phone = '+919876543210';
+        const message = 'Hello OLFIX Support, I need help with...';
+        const url = `whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`;
+        const webUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        
+        Linking.canOpenURL(url).then(supported => {
+            if (supported) {
+                Linking.openURL(url);
+            } else {
+                Linking.openURL(webUrl);
+            }
+        }).catch(() => {
+            Linking.openURL(webUrl);
+        });
+    };
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
@@ -37,18 +54,34 @@ const SupportHelpScreen = () => {
                 <Text style={styles.sectionTitle}>Contact Us</Text>
 
                 <View style={styles.contactGrid}>
-                    <TouchableOpacity style={styles.contactCard}>
+                    <TouchableOpacity
+                        style={styles.contactCard}
+                        onPress={() => Linking.openURL('tel:+919876543210')}
+                    >
                         <View style={[styles.contactIconBox, { backgroundColor: '#E0F2FE' }]}>
                             <Phone size={24} color="#0EA5E9" />
                         </View>
                         <Text style={styles.contactLabel}>Call Us</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.contactCard}>
+                    <TouchableOpacity
+                        style={styles.contactCard}
+                        onPress={() => Linking.openURL('mailto:support@urbanelite.com')}
+                    >
                         <View style={[styles.contactIconBox, { backgroundColor: '#F3E8FF' }]}>
                             <Mail size={24} color="#A855F7" />
                         </View>
                         <Text style={styles.contactLabel}>Email Us</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.contactCard}
+                        onPress={openWhatsApp}
+                    >
+                        <View style={[styles.contactIconBox, { backgroundColor: '#DCFCE7' }]}>
+                            <MessageSquare size={24} color="#22C55E" />
+                        </View>
+                        <Text style={styles.contactLabel}>WhatsApp</Text>
                     </TouchableOpacity>
                 </View>
 

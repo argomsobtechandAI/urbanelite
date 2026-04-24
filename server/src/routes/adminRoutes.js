@@ -3,6 +3,7 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 const adminServiceController = require('../controllers/adminServiceController');
 const adminRequestController = require('../controllers/adminRequestController');
+const ratingController = require('../controllers/ratingController');
 const adminMiddleware = require('../middleware/adminMiddleware');
 
 // All admin routes require admin authentication
@@ -15,6 +16,7 @@ router.get('/dashboard', adminController.getDashboardStats);
 router.get('/users', adminController.getAllUsers);
 router.get('/users/:id', adminController.getUserDetails);
 router.put('/users/:id', adminController.updateUser);
+router.patch('/users/:id/toggle-status', adminController.toggleUserStatus);
 
 // Booking Management
 router.get('/bookings', adminController.getAllBookings);
@@ -51,6 +53,7 @@ router.get('/vendors/pending', adminController.getPendingVendors);
 router.get('/vendors', adminController.getAllVendors);
 router.put('/vendors/:id/approve', adminController.approveVendor);
 router.put('/vendors/:id/reject', adminController.rejectVendor);
+router.patch('/vendors/:id/toggle-status', adminController.toggleVendorStatus);
 router.post('/services/assign-vendor', adminController.assignServiceToVendor);
 
 // Vendor Service Pricing Management (Admin)
@@ -72,5 +75,9 @@ router.get('/offers', offersController.getAllOffers);
 router.post('/offers', offersController.createOffer);
 router.put('/offers/:id', offersController.updateOffer);
 router.delete('/offers/:id', offersController.deleteOffer);
+
+// Reports Management
+router.get('/reports', ratingController.getAllReports);
+router.put('/reports/:id', ratingController.updateReportStatus);
 
 module.exports = router;

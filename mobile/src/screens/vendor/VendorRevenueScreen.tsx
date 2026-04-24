@@ -5,6 +5,7 @@ import { Theme } from '../../theme';
 import { vendorAPI } from '../../services/api';
 import { IndianRupee, TrendingUp, CreditCard } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { formatDisplayDate } from '../../utils/dateUtils';
 
 const VendorRevenueScreen = () => {
     const [loading, setLoading] = useState(true);
@@ -84,7 +85,7 @@ const VendorRevenueScreen = () => {
                                 <View style={styles.transactionLeft}>
                                     <Text style={styles.transactionService}>{transaction.serviceName}</Text>
                                     <Text style={styles.transactionDate}>
-                                        {new Date(transaction.date).toLocaleDateString()}
+                                        {formatDisplayDate(transaction.date)}
                                     </Text>
                                 </View>
                                 <View style={styles.transactionRight}>

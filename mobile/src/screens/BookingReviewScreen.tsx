@@ -196,6 +196,17 @@ const BookingReviewScreen = () => {
                     <Text style={styles.optionPrice}>{item?.price || '₹0'}</Text>
                 </TouchableOpacity>
 
+                {/* Part Replacement Notice */}
+                <View style={styles.partsNotice}>
+                    <Text style={styles.partsNoticeIcon}>🔧</Text>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.partsNoticeTitle}>Part Replacement Policy</Text>
+                        <Text style={styles.partsNoticeText}>
+                            Service charge only. If parts need replacement, costs are paid directly to the provider or you may supply the parts yourself.
+                        </Text>
+                    </View>
+                </View>
+
                 {/* Note */}
                 <View style={styles.noteContainer}>
                     <View style={styles.noteIcon}>
@@ -360,6 +371,11 @@ const styles = StyleSheet.create({
     noteIconText: { fontSize: 16 },
     noteText: { flex: 1, fontSize: 13, color: '#1A202C', lineHeight: 20 },
     noteBold: { fontWeight: 'bold', color: '#C05621' },
+
+    partsNotice: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#F0FFF4', borderRadius: 14, padding: 15, marginBottom: 15, borderWidth: 1, borderColor: '#9AE6B4' },
+    partsNoticeIcon: { fontSize: 20, marginRight: 12 },
+    partsNoticeTitle: { fontSize: 13, fontWeight: 'bold', color: '#276749', marginBottom: 4 },
+    partsNoticeText: { fontSize: 12, color: '#276749', lineHeight: 18 },
 
     footer: { flexDirection: 'row', paddingHorizontal: 20, paddingTop: 20, alignItems: 'center', justifyContent: 'space-between' },
     backButton: { paddingVertical: 15, paddingHorizontal: 30, borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0', width: '30%', alignItems: 'center' },

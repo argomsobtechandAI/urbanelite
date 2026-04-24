@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { ArrowLeft, Bell, Tag, Calendar, Shield } from 'lucide-react-native';
 import { Theme } from '../theme';
 import { userAPI } from '../services/api';
@@ -16,28 +16,53 @@ const PushNotificationsScreen = () => {
         security: true
     });
 
-    useEffect(() => {
-        loadSettings();
-    }, []);
+    // Maps UI key -> actual DB column name
+    const MAPPING: { [key: string]: string } = {
+        bookingUpdates: 'booking_updates',
+        offers: 'offers',
+        reminders: 'reminders',
+        security: 'security'
+    };
+
+    const REVERSE_MAPPING: { [key: string]: string } = Object.entries(MAPPING).reduce((acc, [k, v]) => ({ ...acc, [v]: k }), {});
+
+    useFocusEffect(
+        useCallback(() => {
+            loadSettings();
+        }, [])
+    );
 
     const loadSettings = async () => {
         try {
             const response = await userAPI.getNotificationSettings();
-            // Assuming response matches keys, if not map them
-            setSettings(response.data);
+            if (response.data) {
+                const mappedData: any = {};
+                Object.entries(response.data).forEach(([key, value]) => {
+                    if (REVERSE_MAPPING[key]) {
+                        mappedData[REVERSE_MAPPING[key]] = value;
+                    }
+                });
+                setSettings(prev => ({ ...prev, ...mappedData }));
+            }
         } catch (error) {
             console.error(error);
         }
     };
 
-    const toggleSwitch = async (key: keyof typeof settings) => {
-        const newVal = !settings[key];
-        setSettings(prev => ({ ...prev, [key]: newVal }));
+    const toggleSwitch = async (key: keyof typeof settings, value: boolean) => {
+        const backendKey = MAPPING[key] || key;
+        
+        // Optimistic update
+        setSettings(prev => ({ ...prev, [key]: value }));
+        
         try {
-            await userAPI.updateNotificationSettings({ [key]: newVal });
-        } catch (error) {
-            console.error('Failed to update setting');
-            setSettings(prev => ({ ...prev, [key]: !newVal })); // Revert
+            await userAPI.updateNotificationSettings({ [backendKey]: value });
+        } catch (error: any) {
+            // Log full error details for debugging
+            const status = error?.response?.status;
+            const data = error?.response?.data;
+            console.error('toggleSwitch failed:', JSON.stringify({ status, data, message: error?.message }));
+            setSettings(prev => ({ ...prev, [key]: !value })); // Revert on failure
         }
     };
 
@@ -65,7 +90,7 @@ const PushNotificationsScreen = () => {
                         <Switch
                             trackColor={{ false: '#E2E8F0', true: Theme.colors.brandOrange }}
                             thumbColor="white"
-                            onValueChange={() => toggleSwitch('bookingUpdates')}
+                            onValueChange={(val) => toggleSwitch('bookingUpdates', val)}
                             value={settings.bookingUpdates}
                         />
                     </View>
@@ -83,7 +108,7 @@ const PushNotificationsScreen = () => {
                         <Switch
                             trackColor={{ false: '#E2E8F0', true: Theme.colors.brandOrange }}
                             thumbColor="white"
-                            onValueChange={() => toggleSwitch('offers')}
+                            onValueChange={(val) => toggleSwitch('offers', val)}
                             value={settings.offers}
                         />
                     </View>
@@ -101,7 +126,7 @@ const PushNotificationsScreen = () => {
                         <Switch
                             trackColor={{ false: '#E2E8F0', true: Theme.colors.brandOrange }}
                             thumbColor="white"
-                            onValueChange={() => toggleSwitch('reminders')}
+                            onValueChange={(val) => toggleSwitch('reminders', val)}
                             value={settings.reminders}
                         />
                     </View>
@@ -119,7 +144,7 @@ const PushNotificationsScreen = () => {
                         <Switch
                             trackColor={{ false: '#E2E8F0', true: Theme.colors.brandOrange }}
                             thumbColor="white"
-                            onValueChange={() => toggleSwitch('security')}
+                            onValueChange={(val) => toggleSwitch('security', val)}
                             value={settings.security}
                         />
                     </View>

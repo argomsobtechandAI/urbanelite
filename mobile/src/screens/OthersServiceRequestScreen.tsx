@@ -12,6 +12,7 @@ import {
     ArrowLeft, Calendar, Clock, MapPin, FileText,
     Send, Sparkles, Phone,
 } from 'lucide-react-native';
+import { maskDateInput, parseDisplayDateToISO } from '../utils/dateUtils';
 
 type OthersServiceRequestRouteProp = RouteProp<RootStackParamList, 'OthersServiceRequest'>;
 
@@ -44,7 +45,7 @@ const OthersServiceRequestScreen = () => {
     const [loading, setLoading] = useState(false);
 
     // Simple date validation helper
-    const isValidDate = (val: string) => /^\d{4}-\d{2}-\d{2}$/.test(val);
+    const isValidDate = (val: string) => /^\d{2}-\d{2}-\d{4}$/.test(val);
 
     const handleSubmit = async () => {
         if (!description.trim()) {
@@ -66,7 +67,7 @@ const OthersServiceRequestScreen = () => {
                 serviceItemId,
                 serviceName,
                 description: description + (contactNote ? `\n\nAdditional Notes: ${contactNote}` : ''),
-                preferredDate,
+                preferredDate: parseDisplayDateToISO(preferredDate),
                 preferredTime,
                 location: {
                     type: 'Home',
@@ -163,14 +164,15 @@ const OthersServiceRequestScreen = () => {
                             <Text style={styles.sectionTitle}>Preferred Schedule (Optional)</Text>
                         </View>
 
-                        <Text style={styles.label}>Preferred Date (YYYY-MM-DD)</Text>
+                        <Text style={styles.label}>Preferred Date (DD-MM-YYYY)</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="e.g. 2026-02-25"
+                            placeholder="e.g. 25-02-2026"
                             placeholderTextColor="#A0AEC0"
                             value={preferredDate}
-                            onChangeText={setPreferredDate}
-                            keyboardType="default"
+                            onChangeText={(t) => setPreferredDate(maskDateInput(t))}
+                            keyboardType="number-pad"
+                            maxLength={10}
                         />
 
                         <Text style={styles.label}>Preferred Time Slot</Text>

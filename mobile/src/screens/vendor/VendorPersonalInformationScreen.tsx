@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { ArrowLeft, Camera, Mail, Phone, MapPin, Briefcase, FileText, Layers } from 'lucide-react-native';
 import { Theme } from '../../theme';
 import { userAPI } from '../../services/api';
@@ -23,9 +23,11 @@ const VendorPersonalInformationScreen = () => {
     });
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
-    useEffect(() => {
-        loadProfile();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            loadProfile();
+        }, [])
+    );
 
     const loadProfile = async () => {
         try {
@@ -119,6 +121,12 @@ const VendorPersonalInformationScreen = () => {
     };
 
     const handleSave = async () => {
+        const phoneRegex = /^[0-9]{10}$/;
+        if (vendorData.phone && !phoneRegex.test(vendorData.phone)) {
+            Alert.alert('Error', 'Please enter a valid 10-digit mobile number');
+            return;
+        }
+
         setLoading(true);
         try {
             // Ideally we'd have a specific vendor update endpoint
@@ -230,10 +238,11 @@ const VendorPersonalInformationScreen = () => {
                             <Phone size={20} color={Theme.colors.textLight} style={styles.inputIcon} />
                             <TextInput
                                 value={vendorData.phone}
-                                onChangeText={(text) => setVendorData({ ...vendorData, phone: text })}
+                                onChangeText={(text) => setVendorData({ ...vendorData, phone: text.replace(/[^0-9]/g, '').slice(0, 10) })}
                                 style={styles.input}
                                 placeholder="Enter business phone"
                                 keyboardType="phone-pad"
+                                maxLength={10}
                                 placeholderTextColor={Theme.colors.textLight}
                             />
                         </View>

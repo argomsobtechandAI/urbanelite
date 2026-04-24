@@ -1,9 +1,10 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 
 import {
     StyleSheet, View, Text, TextInput, TouchableOpacity, FlatList,
-    ActivityIndicator, Animated, Keyboard, Image
+    ActivityIndicator, Animated, Keyboard, Image, Platform, PermissionsAndroid
 } from 'react-native';
+const RNAndroidLocationEnabler = require('react-native-android-location-enabler').default || require('react-native-android-location-enabler');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 
@@ -19,10 +20,13 @@ const HomeScreen = () => {
     const [services, setServices] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchOpen, setSearchOpen] = useState(false);
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [searchLoading, setSearchLoading] = useState(false);
     const [loading, setLoading] = useState(true);
     const [unreadCount, setUnreadCount] = useState(0);
     const searchInputRef = useRef<TextInput>(null);
     const searchAnim = useRef(new Animated.Value(0)).current;
+    const searchDebounceTimer = useRef<any>(null);
 
     // Refresh unread count whenever screen comes into focus
     useFocusEffect(
@@ -45,17 +49,67 @@ const HomeScreen = () => {
 
 
 
-    // Filtering — runs every render, always fresh
-    const filteredServices = searchQuery.trim()
-        ? services.filter(s => s.name?.toLowerCase().includes(searchQuery.toLowerCase()))
-        : services;
+    // Global Search Logic
+    const handleSearch = useCallback(async (query: string) => {
+        setSearchQuery(query);
+        if (searchDebounceTimer.current) clearTimeout(searchDebounceTimer.current);
 
-    useEffect(() => {
-        homeAPI.getHomeData()
-            .then(res => setServices(res.data.services || []))
-            .catch(err => console.error('HomeScreen fetch error:', err))
-            .finally(() => setLoading(false));
+        if (!query.trim() || query.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+
+        searchDebounceTimer.current = setTimeout(async () => {
+            setSearchLoading(true);
+            try {
+                const res = await homeAPI.search(query);
+                setSearchResults(res.data.results || []);
+            } catch (err) {
+                console.error('Search error:', err);
+            } finally {
+                setSearchLoading(false);
+            }
+        }, 300);
     }, []);
+
+    // main home screen services stay unfiltered
+    const filteredServices = services;
+
+    useFocusEffect(
+        useCallback(() => {
+            checkLocationPermission();
+            homeAPI.getHomeData()
+                .then(res => setServices(res.data.services || []))
+                .catch(err => console.error('HomeScreen fetch error:', err))
+                .finally(() => setLoading(false));
+        }, [])
+    );
+
+    const checkLocationPermission = async () => {
+        if (Platform.OS !== 'android') return;
+        try {
+            await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+                {
+                    title: 'Location Permission Required',
+                    message: 'OLFIX requires location access to provide services in your area.',
+                    buttonNeutral: 'Ask Me Later',
+                    buttonNegative: 'Cancel',
+                    buttonPositive: 'OK',
+                }
+            );
+            try {
+                await RNAndroidLocationEnabler.promptForEnableLocationIfNeeded({
+                    interval: 10000,
+                    fastInterval: 5000,
+                });
+            } catch {
+                // GPS enable declined — do NOT retry recursively
+            }
+        } catch (err) {
+            console.warn('Location permission not granted:', err);
+        }
+    };
 
     const openSearch = () => {
         setSearchOpen(true);
@@ -135,7 +189,7 @@ const HomeScreen = () => {
                                 placeholderTextColor={Theme.colors.textLight}
                                 style={styles.inlineSearchInput}
                                 value={searchQuery}
-                                onChangeText={setSearchQuery}
+                                onChangeText={handleSearch}
                                 returnKeyType="search"
                                 autoCorrect={false}
                                 autoCapitalize="none"
@@ -161,10 +215,67 @@ const HomeScreen = () => {
                 </View>
             </View>
 
+            {/* ── SEARCH RESULTS DROPDOWN ── */}
+            {searchOpen && searchQuery.length >= 2 && (
+                <View style={styles.searchDropdown}>
+                    {searchLoading ? (
+                        <ActivityIndicator style={{ padding: 20 }} color={Theme.colors.brandOrange} />
+                    ) : searchResults.length > 0 ? (
+                        <FlatList
+                            data={searchResults}
+                            keyExtractor={(item, idx) => `${item.type}-${item.id}-${idx}`}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={styles.searchResultItem}
+                                    onPress={() => {
+                                        closeSearch();
+                                        if (item.type === 'CATEGORY') {
+                                            navigation.navigate('SubCategory', { slug: item.slug, name: item.name });
+                                        } else if (item.type === 'SUBCATEGORY') {
+                                            navigation.navigate('ServiceListing' as any, { slug: item.slug, name: item.name } as any);
+                                        } else if (item.type === 'SERVICE') {
+                                            // Construct a minimal item for VendorSelection
+                                            const serviceItem = {
+                                                id: item.id,
+                                                title: item.name,
+                                                price: item.price,
+                                                image: item.image,
+                                                subcategory_id: item.subcategory_id
+                                            };
+                                            navigation.navigate('VendorSelection', { item: serviceItem });
+                                        }
+                                    }}
+                                >
+                                    <View style={styles.searchResultIcon}>
+                                        {item.image ? (
+                                            <Image source={{ uri: item.image }} style={styles.searchResultImg} />
+                                        ) : (
+                                            <Search size={16} color="#A0AEC0" />
+                                        )}
+                                    </View>
+                                    <View style={styles.searchResultInfo}>
+                                        <Text style={styles.searchResultName}>{item.name}</Text>
+                                        <Text style={styles.searchResultType}>
+                                            {item.type === 'SERVICE' ? `Service • ${item.price || ''}` : item.type.toLowerCase()}
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+                            )}
+                            keyboardShouldPersistTaps="handled"
+                            style={{ maxHeight: 400 }}
+                        />
+                    ) : (
+                        <View style={{ padding: 20, alignItems: 'center' }}>
+                            <Text style={{ color: '#A0AEC0' }}>No results for "{searchQuery}"</Text>
+                        </View>
+                    )}
+                </View>
+            )}
+
             {/* ── HERO BANNER (always mounted, never inside FlatList) ── */}
             <View style={styles.heroBanner}>
                 <View style={styles.heroContent}>
-                    <Text style={styles.heroTitle}>One call</Text>
+                    <Text style={styles.heroTitle}>We</Text>
                     <Text style={styles.heroSubtitle}>Fix all</Text>
                     <TouchableOpacity style={styles.bookNowButton}>
                         <Text style={styles.bookNowText}>BOOK SERVICE</Text>
@@ -175,12 +286,8 @@ const HomeScreen = () => {
                 </View>
             </View>
 
-            {/* ── SECTION TITLE ── */}
             <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Top Services</Text>
-                {searchQuery.trim() ? (
-                    <Text style={styles.resultCount}>{filteredServices.length} result{filteredServices.length !== 1 ? 's' : ''}</Text>
-                ) : null}
+                <Text style={styles.sectionTitle}>Top Categories</Text>
             </View>
 
             {/* ── FLAT LIST — only renders grid items, no header inside ── */}
@@ -292,10 +399,77 @@ const styles = StyleSheet.create({
     iconContainer: { width: 80, height: 80, backgroundColor: '#FFFFFF', borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 10, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2 },
     serviceText: { fontSize: 11, fontWeight: '700', color: Theme.colors.textDark, textAlign: 'center' },
 
-    // Empty
-    emptySearch: { alignItems: 'center', paddingTop: 40, paddingBottom: 20 },
-    emptySearchTitle: { fontSize: 16, fontWeight: '700', color: '#4A5568', marginTop: 12, marginBottom: 4 },
-    emptySearchSub: { fontSize: 13, color: '#A0AEC0' },
+    // Search Dropdown
+    searchDropdown: {
+        position: 'absolute',
+        top: 65,
+        left: 20,
+        right: 20,
+        backgroundColor: 'white',
+        borderRadius: 16,
+        zIndex: 1000,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.15,
+        shadowRadius: 15,
+        elevation: 10,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+        overflow: 'hidden',
+    },
+    searchResultItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F8FAFC',
+    },
+    searchResultIcon: {
+        width: 36,
+        height: 36,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    searchResultImg: {
+        width: 24,
+        height: 24,
+        borderRadius: 4,
+    },
+    searchResultInfo: {
+        flex: 1,
+    },
+    searchResultName: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: Theme.colors.textDark,
+    },
+    searchResultType: {
+        fontSize: 11,
+        color: '#A0AEC0',
+        marginTop: 2,
+        textTransform: 'capitalize',
+    },
+    emptySearch: {
+        alignItems: 'center',
+        paddingVertical: 40,
+        paddingHorizontal: 20,
+    },
+    emptySearchTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#4A5568',
+        marginTop: 16,
+        textAlign: 'center',
+    },
+    emptySearchSub: {
+        fontSize: 13,
+        color: '#A0AEC0',
+        marginTop: 6,
+        textAlign: 'center',
+    },
 });
 
 export default HomeScreen;

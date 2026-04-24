@@ -174,7 +174,6 @@ const styles = StyleSheet.create({
     logoIcon: { width: 40, height: 40, backgroundColor: Theme.colors.brandOrange, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
     logoIconText: { fontSize: 24, color: 'white' },
     headerTitle: { fontSize: 22, fontWeight: 'bold' },
-    titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900' },
     titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900', fontStyle: 'italic' },
     notificationButton: { width: 40, height: 40, backgroundColor: Theme.colors.searchBg, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
     notificationIcon: { width: 20, height: 20, tintColor: Theme.colors.textLight },

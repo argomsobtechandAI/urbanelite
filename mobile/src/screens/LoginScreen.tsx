@@ -9,7 +9,9 @@ import {
     ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
+    PermissionsAndroid,
 } from 'react-native';
+const RNAndroidLocationEnabler = require('react-native-android-location-enabler').default || require('react-native-android-location-enabler');
 import Svg, { Path } from 'react-native-svg';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
@@ -39,7 +41,24 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             webClientId: '206297713985-hiijn9vngqa4flqi27aumdel2gcqvu4j.apps.googleusercontent.com',
             offlineAccess: true, // Required to receive idToken
         });
+        checkLocation();
     }, []);
+
+    const checkLocation = async () => {
+        if (Platform.OS !== 'android') return;
+        try {
+            await RNAndroidLocationEnabler.promptForEnableLocationIfNeeded({
+                interval: 10000,
+                fastInterval: 5000,
+            });
+            await PermissionsAndroid.request(
+                PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+            );
+        } catch (err) {
+            // User denied location — do NOT retry recursively, just continue
+            console.warn('Location permission not granted:', err);
+        }
+    };
 
     const handleGoogleLogin = async () => {
         try {
@@ -273,6 +292,17 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                         </TouchableOpacity>
                     </View>
 
+                    {/* Terms & Conditions */}
+                    <TouchableOpacity
+                        style={styles.termsContainer}
+                        onPress={() => navigation.navigate('TermsConditions' as any, { role: selectedRole })}
+                    >
+                        <Text style={styles.termsText}>
+                            By continuing, you agree to our{' '}
+                            <Text style={styles.termsLink}>Terms &amp; Conditions</Text>
+                        </Text>
+                    </TouchableOpacity>
+
                     <TouchableOpacity
                         style={styles.testButton}
                         onPress={() => {
@@ -328,7 +358,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     roleButtonActive: {
-        backgroundColor: Theme.colors.navy,
+        backgroundColor: Theme.colors.brandOrange,
     },
     roleButtonText: {
         fontSize: 14,
@@ -399,6 +429,22 @@ const styles = StyleSheet.create({
         color: '#0F172A',
         fontSize: 14,
         fontWeight: 'bold',
+    },
+    termsContainer: {
+        alignItems: 'center',
+        marginTop: 12,
+        paddingHorizontal: 20,
+    },
+    termsText: {
+        color: '#94A3B8',
+        fontSize: 12,
+        textAlign: 'center',
+        lineHeight: 18,
+    },
+    termsLink: {
+        color: Theme.colors.brandOrange,
+        fontWeight: '600',
+        textDecorationLine: 'underline',
     },
     forgotPasswordContainer: {
         alignItems: 'flex-end',

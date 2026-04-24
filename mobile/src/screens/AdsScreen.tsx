@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, ActivityIndicator, TextInput, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { Theme } from '../theme';
 import { RootStackParamList } from '../types/navigation';
 import { offersAPI } from '../services/api';
 import { Tag, Clock, Briefcase, MapPin } from 'lucide-react-native';
 import NotificationBell from '../components/NotificationBell';
+import { formatDisplayDate } from '../utils/dateUtils';
 
 const AdsScreen = () => {
     const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -14,9 +15,11 @@ const AdsScreen = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'PROMOTION' | 'JOB'>('PROMOTION');
 
-    useEffect(() => {
-        fetchOffers();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            fetchOffers();
+        }, [])
+    );
 
     const fetchOffers = async () => {
         try {
@@ -111,7 +114,7 @@ const AdsScreen = () => {
                     {item.valid_until && (
                         <View style={styles.jobFooter}>
                             <Clock size={12} color="#A0AEC0" />
-                            <Text style={styles.expiryText}>Apply by: {new Date(item.valid_until).toLocaleDateString()}</Text>
+                            <Text style={styles.expiryText}>Apply by: {formatDisplayDate(item.valid_until)}</Text>
                         </View>
                     )}
 
@@ -150,7 +153,7 @@ const AdsScreen = () => {
                     {item.valid_until && (
                         <View style={styles.expiryContainer}>
                             <Clock size={12} color="#718096" />
-                            <Text style={styles.expiryText}>Valid until: {new Date(item.valid_until).toLocaleDateString()}</Text>
+                            <Text style={styles.expiryText}>Valid until: {formatDisplayDate(item.valid_until)}</Text>
                         </View>
                     )}
                 </View>
@@ -200,7 +203,6 @@ const styles = StyleSheet.create({
     logoIcon: { width: 40, height: 40, backgroundColor: Theme.colors.brandOrange, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
     logoIconText: { fontSize: 24, color: 'white' },
     headerTitle: { fontSize: 22, fontWeight: 'bold' },
-    titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900' },
     titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900', fontStyle: 'italic' },
     notificationButton: { width: 40, height: 40, backgroundColor: Theme.colors.searchBg, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
     notificationIcon: { width: 20, height: 20, tintColor: Theme.colors.textLight },

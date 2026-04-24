@@ -38,8 +38,11 @@ const VendorCreateOfferScreen = () => {
     const futureDays = Array.from({ length: 30 }, (_, i) => {
         const d = new Date();
         d.setDate(d.getDate() + i);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
         return {
-            label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }),
+            label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : `${day}-${month}-${year}`,
             value: d.toISOString().split('T')[0]
         };
     });

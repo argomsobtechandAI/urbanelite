@@ -1,12 +1,13 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     View, Text, StyleSheet, FlatList, TouchableOpacity,
     ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { useNavigation, NavigationProp, useFocusEffect } from '@react-navigation/native';
 import { ArrowLeft, ClipboardList, Clock, CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react-native';
 import { Theme } from '../theme';
+import { formatDisplayDate } from '../utils/dateUtils';
 import { RootStackParamList } from '../types/navigation';
 import { adminRequestAPI } from '../services/api';
 
@@ -50,16 +51,16 @@ const MyOthersRequestsScreen = () => {
         }
     }, []);
 
-    useEffect(() => {
-        fetchRequests();
-    }, [fetchRequests]);
+    useFocusEffect(
+        useCallback(() => {
+            fetchRequests();
+        }, [fetchRequests])
+    );
 
     const renderItem = useCallback(({ item }: { item: AdminRequest }) => {
         const statusCfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.PENDING;
         const StatusIcon = statusCfg.icon;
-        const date = new Date(item.createdAt).toLocaleDateString('en-IN', {
-            day: 'numeric', month: 'short', year: 'numeric',
-        });
+        const date = formatDisplayDate(item.createdAt);
 
         return (
             <View style={styles.card}>
@@ -90,7 +91,7 @@ const MyOthersRequestsScreen = () => {
                 <View style={styles.cardMeta}>
                     <Text style={styles.metaText}>📅 Submitted: {date}</Text>
                     {item.preferredDate ? (
-                        <Text style={styles.metaText}>🗓 Preferred: {item.preferredDate}</Text>
+                        <Text style={styles.metaText}>🗓 Preferred: {formatDisplayDate(item.preferredDate)}</Text>
                     ) : null}
                 </View>
 

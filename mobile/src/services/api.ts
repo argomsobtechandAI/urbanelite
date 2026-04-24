@@ -80,6 +80,7 @@ export const homeAPI = {
     getServiceListing: (slug: string) => api.get(`/api/home/listing/${slug}`),
 
     getServiceDetail: (id: string) => api.get(`/api/home/service/${id}`),
+    search: (query: string) => api.get('/api/home/search', { params: { q: query } }),
 };
 
 export const userAPI = {
@@ -189,6 +190,14 @@ export const notificationsAPI = {
     getUnreadCount: () => api.get('/api/user/notifications/unread-count'),
     markRead: (notificationIds?: string[], all?: boolean) =>
         api.post('/api/user/notifications/mark-read', { notificationIds, all }),
+};
+
+export const ratingAPI = {
+    submitRating: (data: { bookingId: string; reviewedId: string; rating: number; feedback?: string }) =>
+        api.post('/api/ratings', data),
+    getBookingRating: (bookingId: string) => api.get(`/api/ratings/booking/${bookingId}`),
+    submitReport: (data: { reportedId: string; bookingId?: string; reason: string; description?: string }) =>
+        api.post('/api/ratings/report', data),
 };
 
 export default api;

@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, ActivityIndicator, TextInput, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Theme } from '../../theme';
 import { vendorAPI } from '../../services/api';
 import { Briefcase, CheckCircle2, Clock, ShieldAlert, ArrowLeft } from 'lucide-react-native';
@@ -12,9 +12,11 @@ const VendorServicesScreen = () => {
     const [services, setServices] = useState<any[]>([]);
     const [updatingMap, setUpdatingMap] = useState<Record<string, boolean>>({});
 
-    useEffect(() => {
-        fetchServices();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            fetchServices();
+        }, [])
+    );
 
     const fetchServices = async () => {
         try {

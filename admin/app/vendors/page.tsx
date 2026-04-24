@@ -18,6 +18,7 @@ interface Vendor {
     pan_url: string | null;
     certification_docs: string[] | null;
     approval_status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    is_active?: boolean;
     created_at: string;
 }
 
@@ -39,6 +40,7 @@ export default function VendorsPage() {
     const [vendors, setVendors] = useState<Vendor[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('PENDING');
+    const [togglingVendorId, setTogglingVendorId] = useState<string | null>(null);
 
     // Specialization State
     const [isSpecModalOpen, setIsSpecModalOpen] = useState(false);
@@ -208,6 +210,22 @@ export default function VendorsPage() {
         } catch (error) {
             console.error('Error rejecting vendor:', error);
             alert('Failed to reject vendor');
+        }
+    };
+
+    const handleToggleVendorStatus = async (vendor: Vendor) => {
+        const newStatus = vendor.is_active === false ? true : false;
+        const action = newStatus ? 'enable' : 'disable';
+        if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} vendor "${vendor.name}"? ${!newStatus ? 'They will not be able to login even if approved.' : 'They will be able to login.'}`)) return;
+        setTogglingVendorId(vendor.id);
+        try {
+            await adminAPI.toggleVendorStatus(vendor.id, newStatus);
+            setVendors(prev => prev.map(v => v.id === vendor.id ? { ...v, is_active: newStatus } : v));
+        } catch (error) {
+            console.error('Error toggling vendor status:', error);
+            alert('Failed to update vendor status');
+        } finally {
+            setTogglingVendorId(null);
         }
     };
 
@@ -494,9 +512,18 @@ export default function VendorsPage() {
 
                                 {vendor.approval_status === 'APPROVED' && (
                                     <div className="space-y-3">
-                                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-                                            <p className="text-sm text-green-800">
-                                                ✅ This vendor is approved and can login to provide services
+                                        <div className={`border rounded-lg p-3 text-center ${
+                                            vendor.is_active === false
+                                                ? 'bg-red-50 border-red-200'
+                                                : 'bg-green-50 border-green-200'
+                                        }`}>
+                                            <p className={`text-sm ${
+                                                vendor.is_active === false ? 'text-red-800' : 'text-green-800'
+                                            }`}>
+                                                {vendor.is_active === false
+                                                    ? '🚫 This vendor is approved but currently DISABLED and cannot login'
+                                                    : '✅ This vendor is approved and can login to provide services'
+                                                }
                                             </p>
                                         </div>
                                         <div className="flex gap-2">
@@ -515,6 +542,20 @@ export default function VendorsPage() {
                                                 Manage Service Pricing
                                             </button>
                                         </div>
+                                        <button
+                                            onClick={() => handleToggleVendorStatus(vendor)}
+                                            disabled={togglingVendorId === vendor.id}
+                                            className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 ${
+                                                vendor.is_active === false
+                                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                    : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                            }`}
+                                        >
+                                            {vendor.is_active === false
+                                                ? <><UserCheck className="w-4 h-4" /> Enable Vendor Account</>
+                                                : <><XCircle className="w-4 h-4" /> Disable Vendor Account</>
+                                            }
+                                        </button>
                                     </div>
                                 )}
 

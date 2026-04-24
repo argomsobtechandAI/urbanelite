@@ -15,6 +15,7 @@ import {
     ClipboardList,
     Inbox,
     Megaphone,
+    Flag,
 } from 'lucide-react';
 
 const navigation = [
@@ -27,6 +28,7 @@ const navigation = [
     { name: 'Services', href: '/services/list', icon: ClipboardList },
     { name: 'Others Requests', href: '/others-requests', icon: Inbox },
     { name: 'Offers & Ads', href: '/offers', icon: Megaphone },
+    { name: 'Reports', href: '/reports', icon: Flag },
     { name: 'Payments', href: '/dashboard/payments', icon: CreditCard },
 ];
 

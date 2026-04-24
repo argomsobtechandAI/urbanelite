@@ -1,4 +1,5 @@
 const supabase = require('../config/database');
+const pgPool = require('../lib/pgClient');
 
 // Get User Profile
 const getUserProfile = async (req, res) => {
@@ -363,30 +364,58 @@ const getNotificationSettings = async (req, res) => {
 
 const updateNotificationSettings = async (req, res) => {
     try {
-        // Step 1: Try to update the existing row
-        const { data: updated, error: updateError } = await supabase
-            .from('notification_settings')
-            .update(req.body)
-            .eq('user_id', req.user.id)
-            .select()
-            .single();
+        const userId = req.user.id;
+        const body = req.body;
 
-        if (updated) {
-            return res.json(updated);
+        // Actual column names in the notification_settings table
+        const ALLOWED_COLS = [
+            'booking_updates', 'offers', 'reminders', 'security',
+            'new_leads', 'payouts'
+        ];
+
+        const changedCols = ALLOWED_COLS.filter(col => body[col] !== undefined);
+        if (changedCols.length === 0) {
+            return res.status(400).json({ message: 'No valid fields to update' });
         }
 
-        // Step 2: No existing row — insert a new one with defaults + overrides
-        const { data: inserted, error: insertError } = await supabase
-            .from('notification_settings')
-            .insert({ user_id: req.user.id, ...req.body })
-            .select()
-            .single();
+        const updatePayload = {};
+        changedCols.forEach(col => { updatePayload[col] = body[col]; });
 
-        if (insertError) throw insertError;
-        res.json(inserted);
+        const axios = require('axios');
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+        const headers = {
+            'apikey': serviceKey,
+            'Authorization': `Bearer ${serviceKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+        };
+
+        // Step 1: Try PATCH (update existing row)
+        const patchRes = await axios.patch(
+            `${supabaseUrl}/rest/v1/notification_settings?user_id=eq.${userId}`,
+            updatePayload,
+            { headers }
+        );
+
+        // If row was found and updated, return it
+        if (patchRes.data && patchRes.data.length > 0) {
+            return res.json(patchRes.data[0]);
+        }
+
+        // Step 2: No row exists yet — INSERT with defaults
+        const insertPayload = { user_id: userId, ...updatePayload };
+        const postRes = await axios.post(
+            `${supabaseUrl}/rest/v1/notification_settings`,
+            insertPayload,
+            { headers }
+        );
+
+        res.json(postRes.data?.[0] || { success: true });
     } catch (error) {
-        console.error('updateNotificationSettings error:', error);
-        res.status(500).json({ message: 'Server Error' });
+        const errDetail = error.response?.data || error.message;
+        console.error('updateNotificationSettings error:', errDetail);
+        res.status(500).json({ message: 'Server Error', detail: JSON.stringify(errDetail) });
     }
 };
 

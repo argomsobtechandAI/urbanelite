@@ -113,7 +113,7 @@ const PaymentMethodsScreen = () => {
                 {/* Add New Button */}
                 <TouchableOpacity style={styles.addNewButton} onPress={handleAdd}>
                     <Plus size={20} color={Theme.colors.brandOrange} />
-                    <Text style={styles.addNewText}>Add New Card</Text>
+                    <Text style={styles.addNewText}>Add New Payment Method</Text>
                 </TouchableOpacity>
 
             </ScrollView>

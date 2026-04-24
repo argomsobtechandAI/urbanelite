@@ -28,7 +28,7 @@ exports.getOffers = async (req, res) => {
 // Create a new offer
 exports.createOffer = async (req, res) => {
     try {
-        const { title, description, discountAmount, discountCode, serviceId, validUntil, imageUrl, mediaUrls } = req.body;
+        const { title, description, discountAmount, discountCode, serviceId, validUntil, imageUrl, mediaUrls, type } = req.body;
         const userId = req.user.id;
         const role = req.user.role;
 
@@ -40,18 +40,19 @@ exports.createOffer = async (req, res) => {
             });
         }
 
+        const offerType = type || 'PROMOTION';
         const offerData = {
             title,
             description,
             discount_amount: discountAmount,
-            discount_code: discountCode,
+            discount_code: discountCode || null,
             service_id: serviceId || null,
             vendor_id: role === 'VENDOR' ? userId : null,
-            valid_until: validUntil,
+            valid_until: validUntil || null,
             image_url: imageUrl || (mediaUrls && mediaUrls[0]) || null,
             media_urls: mediaUrls || [],
             status: 'ACTIVE',
-            type: req.body.type || 'PROMOTION'
+            type: offerType
         };
 
         const { data: offer, error } = await supabase
@@ -60,29 +61,38 @@ exports.createOffer = async (req, res) => {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error('Supabase insert error:', JSON.stringify(error));
+            throw error;
+        }
 
-        // 🔔 Automatically notify all users about this offer/job
-        createOfferNotification({
-            offerId: offer.id,
-            vendorId: role === 'VENDOR' ? userId : null,
-            type: offerData.type,
-            title,
-            description,
-            discountAmount,
-        });
+        // Notify users about the new offer/job (non-blocking)
+        try {
+            createOfferNotification({
+                offerId: offer.id,
+                vendorId: role === 'VENDOR' ? userId : null,
+                type: offerType,
+                title,
+                description,
+                discountAmount,
+            });
+        } catch (notifErr) {
+            console.error('Notification error (non-fatal):', notifErr.message);
+        }
 
         res.status(201).json({
             success: true,
-            message: 'Offer created successfully',
+            message: `${offerType === 'JOB' ? 'Job offer' : 'Offer'} created successfully`,
             data: offer
         });
 
     } catch (error) {
         console.error('Error creating offer:', error);
+        const offerType = req.body?.type || 'PROMOTION';
         res.status(500).json({
             success: false,
-            error: 'Failed to create offer'
+            error: `Failed to create ${offerType === 'JOB' ? 'job offer' : 'offer'}`,
+            detail: error.message
         });
     }
 };

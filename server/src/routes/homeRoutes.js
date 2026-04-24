@@ -7,11 +7,13 @@ const {
     getServiceDetailById,
     getServiceCategories,
     getSubCategoriesById,
-    getServiceListingById
+    getServiceListingById,
+    search
 } = require('../controllers/homeController');
 const { getVendorsForService, getVendorProfile } = require('../controllers/vendorListingController');
 
 router.get('/', getHomeData);
+router.get('/search', search);
 router.get('/services/categories', getServiceCategories);
 
 // Level 2: Get Subcategories for a Category
