@@ -11,7 +11,6 @@ import {
     Platform,
     PermissionsAndroid,
     ScrollView,
-    Linking,
 } from 'react-native';
 const RNAndroidLocationEnabler = require('react-native-android-location-enabler').default || require('react-native-android-location-enabler');
 import Svg, { Path } from 'react-native-svg';
@@ -20,10 +19,12 @@ import { RootStackParamList } from '../types/navigation';
 import { authAPI } from '../services/api';
 import { authService } from '../services/authService';
 import { Theme } from '../theme';
+import {
+    GoogleSignin,
+    statusCodes,
+} from '@react-native-google-signin/google-signin';
 import { supabase } from '../lib/supabase';
 import { Eye, EyeOff } from 'lucide-react-native';
-
-const REDIRECT_URL = 'com.olfix://callback';
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
 
@@ -40,27 +41,11 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     const [loginError, setLoginError] = useState('');
 
     useEffect(() => {
-        checkLocation();
-
-        // Listen for deep link callback from Supabase OAuth
-        const handleDeepLink = async (event: { url: string }) => {
-            if (event.url.startsWith(REDIRECT_URL)) {
-                await handleOAuthCallback(event.url);
-            }
-        };
-
-        const subscription = Linking.addEventListener('url', handleDeepLink);
-
-        // Check if app was opened via a deep link (cold start)
-        Linking.getInitialURL().then((url) => {
-            if (url && url.startsWith(REDIRECT_URL)) {
-                handleOAuthCallback(url);
-            }
+        GoogleSignin.configure({
+            webClientId: '169716600495-i6viptj0oto6vnfqm6rbk9pc15d4nnhf.apps.googleusercontent.com',
+            offlineAccess: true,
         });
-
-        return () => {
-            subscription.remove();
-        };
+        checkLocation();
     }, []);
 
     const checkLocation = async () => {
@@ -78,46 +63,29 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         }
     };
 
-    /**
-     * Handle the OAuth callback deep link from Supabase.
-     * The URL contains access_token and refresh_token as fragment parameters.
-     */
-    const handleOAuthCallback = async (url: string) => {
+    const handleGoogleLogin = async () => {
         try {
             setLoading(true);
             setLoginError('');
 
-            // Extract tokens from the URL fragment
-            // Format: com.olfix://callback#access_token=...&refresh_token=...&...
-            const fragmentIndex = url.indexOf('#');
-            if (fragmentIndex === -1) {
-                throw new Error('No auth tokens in callback URL');
+            await GoogleSignin.hasPlayServices();
+            const response = await GoogleSignin.signIn();
+
+            const idToken = response.data?.idToken ?? (response as any).idToken;
+
+            if (!idToken) {
+                if ((response as any).type === 'cancelled') return;
+                throw new Error('No ID token received from Google');
             }
 
-            const fragment = url.substring(fragmentIndex + 1);
-            const params = new URLSearchParams(fragment);
-            const accessToken = params.get('access_token');
-            const refreshToken = params.get('refresh_token');
-
-            if (!accessToken || !refreshToken) {
-                throw new Error('Missing tokens in callback');
-            }
-
-            // Set the Supabase session using the tokens
-            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-                access_token: accessToken,
-                refresh_token: refreshToken,
+            // Sync with Supabase (optional but good for consistency)
+            await supabase.auth.signInWithIdToken({
+                provider: 'google',
+                token: idToken,
             });
 
-            if (sessionError) throw sessionError;
-            if (!sessionData.session) throw new Error('Failed to create session');
-
-            const supaUser = sessionData.session.user;
-            console.log('Supabase OAuth session created for:', supaUser.email);
-
-            // Sync with our backend — send the access token as idToken
-            // The backend will decode it and create/lookup the user
-            const apiResponse = await authAPI.googleLogin(accessToken, selectedRole);
+            // Sync with our backend — pass selectedRole for role validation
+            const apiResponse = await authAPI.googleLogin(idToken, selectedRole);
             const data = apiResponse.data;
 
             if (!data.success) throw new Error(data.error || 'Google Login failed');
@@ -129,8 +97,37 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             navigation.reset({ index: 0, routes: [{ name: targetScreen as any }] });
 
         } catch (error: any) {
-            console.error('OAuth callback error:', error);
+            console.error('Google Login Error:', error);
+            if (error.code === statusCodes.SIGN_IN_CANCELLED) return;
+            if (error.code === statusCodes.IN_PROGRESS) return;
+            if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+                Alert.alert('Error', 'Google Play Services not available or outdated');
+                return;
+            }
+
+            // DEVELOPER_ERROR (Code 10) usually means SHA-1 mismatch or wrong Web Client ID
+            if (error.code === '10' || error.code === 10 || error.message?.includes('DEVELOPER_ERROR')) {
+                Alert.alert(
+                    'Google Sign-In Error',
+                    'Developer Error (Code 10).\n\nThis usually means the SHA-1 fingerprint in Firebase doesn\'t match the keystore used to sign the app, or the Web Client ID is incorrect.',
+                    [{ text: 'OK' }]
+                );
+                return;
+            }
+
             const errorData = error.response?.data;
+
+            // Role mismatch — show a clear popup
+            if (errorData?.errorCode === 'ROLE_MISMATCH') {
+                const registeredAs = errorData.registeredRole === 'VENDOR' ? 'Vendor' : 'User';
+                const attemptedAs = selectedRole === 'VENDOR' ? 'Vendor' : 'User';
+                Alert.alert(
+                    '⚠️ Wrong Account Type',
+                    `This Google account is registered as a ${registeredAs} account.\n\nYou cannot sign in as a ${attemptedAs} with this Google account.\n\nPlease select "${registeredAs}" and try again.`,
+                    [{ text: 'OK' }]
+                );
+                return;
+            }
             if (errorData?.approvalStatus === 'PENDING') {
                 Alert.alert('Approval Pending', 'Your account is pending admin approval.');
                 return;
@@ -139,47 +136,9 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                 Alert.alert('Account Rejected', 'Your account has been rejected.');
                 return;
             }
-            setLoginError(errorData?.error || error.message || 'Google sign-in failed. Please try again.');
+            Alert.alert('Google Login Failed', errorData?.error || error.message || 'An error occurred');
         } finally {
             setLoading(false);
-        }
-    };
-
-    /**
-     * Web-based Google OAuth via Supabase.
-     * Opens Google login in system browser → redirects back to app via deep link.
-     */
-    const handleGoogleLogin = async () => {
-        try {
-            setLoading(true);
-            setLoginError('');
-
-            const { data, error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: REDIRECT_URL,
-                    skipBrowserRedirect: true,
-                },
-            });
-
-            if (error) throw error;
-            if (!data.url) throw new Error('Failed to get Google login URL');
-
-            // Open the URL in the system browser
-            const supported = await Linking.canOpenURL(data.url);
-            if (supported) {
-                await Linking.openURL(data.url);
-            } else {
-                throw new Error('Cannot open browser for Google login');
-            }
-
-        } catch (error: any) {
-            console.error('Google OAuth error:', error);
-            setLoginError(error.message || 'Failed to start Google login. Please try again.');
-        } finally {
-            // Don't set loading=false here — we wait for the callback
-            // setLoading will be reset in handleOAuthCallback
-            setTimeout(() => setLoading(false), 5000); // Safety timeout
         }
     };
 
@@ -196,7 +155,8 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
         setLoading(true);
         try {
-            const response = await authAPI.login(email.trim(), password);
+            // Pass selectedRole so server can validate it matches the registered role
+            const response = await authAPI.login(email.trim(), password, selectedRole);
             const data = response.data;
 
             if (!data.success) throw new Error(data.error || 'Login failed');
@@ -211,6 +171,17 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             console.error('Login error:', error);
             const errorData = error.response?.data;
 
+            // Role mismatch — show a clear popup
+            if (errorData?.errorCode === 'ROLE_MISMATCH') {
+                const registeredAs = errorData.registeredRole === 'VENDOR' ? 'Vendor' : 'User';
+                const attemptedAs = selectedRole === 'VENDOR' ? 'Vendor' : 'User';
+                Alert.alert(
+                    '⚠️ Wrong Account Type',
+                    `This email is registered as a ${registeredAs} account.\n\nYou cannot sign in as a ${attemptedAs} with this email.\n\nPlease select "${registeredAs}" and try again.`,
+                    [{ text: 'OK' }]
+                );
+                return;
+            }
             if (errorData?.approvalStatus === 'PENDING') {
                 setLoginError('Your account is pending admin approval. Please wait.');
                 return;

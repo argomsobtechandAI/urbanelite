@@ -152,7 +152,7 @@ exports.register = async (req, res) => {
 // Login user
 exports.login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, role } = req.body;
 
         // Validate required fields
         if (!email || !password) {
@@ -190,6 +190,19 @@ exports.login = async (req, res) => {
             });
         }
 
+        // Role mismatch check: if a role is provided and it doesn't match the registered role
+        if (role && user.role !== role) {
+            const registeredAs = user.role === 'VENDOR' ? 'Vendor' : 'User';
+            const attemptedAs = role === 'VENDOR' ? 'Vendor' : 'User';
+            console.log(`Role mismatch: ${email} is ${user.role} but tried to login as ${role}`);
+            return res.status(403).json({
+                success: false,
+                error: `This account is registered as a ${registeredAs}. You cannot log in as a ${attemptedAs} with this email.`,
+                errorCode: 'ROLE_MISMATCH',
+                registeredRole: user.role
+            });
+        }
+
         // Check approval status for vendors
         if (user.role === 'VENDOR') {
             if (user.approval_status === 'PENDING') {
@@ -209,7 +222,6 @@ exports.login = async (req, res) => {
         }
 
         // Generate JWT token with role
-        // Use runtime process.env check to ensure consistency with middleware
         const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
         console.log('DEBUG: Login Signing Secret:', secret.substring(0, 5) + '...');
         const token = jwt.sign(
@@ -568,6 +580,20 @@ exports.googleLogin = async (req, res) => {
             }
 
             targetUser = newUser;
+        } else {
+            // Existing user: check if the selected role matches their registered role
+            const attemptedRole = role === 'VENDOR' ? 'VENDOR' : 'USER';
+            if (targetUser.role !== attemptedRole) {
+                const registeredAs = targetUser.role === 'VENDOR' ? 'Vendor' : 'User';
+                const attemptedAs = attemptedRole === 'VENDOR' ? 'Vendor' : 'User';
+                console.log(`Google role mismatch: ${email} is ${targetUser.role} but tried as ${attemptedRole}`);
+                return res.status(403).json({
+                    success: false,
+                    error: `This Google account is registered as a ${registeredAs}. You cannot log in as a ${attemptedAs} with this account.`,
+                    errorCode: 'ROLE_MISMATCH',
+                    registeredRole: targetUser.role
+                });
+            }
         }
 
         // Check approval for vendors
