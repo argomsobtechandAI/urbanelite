@@ -4,7 +4,7 @@ import { Theme } from '../theme';
 import { Zap } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
-const LOGO_IMG = require('../assets/images/logo.png');
+const LOGO_IMG = require('../assets/images/old_logo.png');
 
 const SplashScreen = ({ onFinish }: { onFinish: () => void }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;

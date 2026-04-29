@@ -400,6 +400,7 @@ const styles = StyleSheet.create({
     logoImage: {
         width: 80,
         height: 80,
+        borderRadius: 40,
     },
 
     roleSelector: {

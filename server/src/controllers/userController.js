@@ -388,49 +388,35 @@ const updateNotificationSettings = async (req, res) => {
             'new_leads', 'payouts'
         ];
 
-        const changedCols = ALLOWED_COLS.filter(col => body[col] !== undefined);
-        if (changedCols.length === 0) {
+        const updatePayload = { user_id: userId };
+        let hasUpdates = false;
+
+        ALLOWED_COLS.forEach(col => {
+            if (body[col] !== undefined) {
+                updatePayload[col] = body[col];
+                hasUpdates = true;
+            }
+        });
+
+        if (!hasUpdates) {
             return res.status(400).json({ message: 'No valid fields to update' });
         }
 
-        const updatePayload = {};
-        changedCols.forEach(col => { updatePayload[col] = body[col]; });
+        const { data, error } = await supabase
+            .from('notification_settings')
+            .upsert(updatePayload, { onConflict: 'user_id' })
+            .select()
+            .single();
 
-        const axios = require('axios');
-        const supabaseUrl = process.env.SUPABASE_URL;
-        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
-        const headers = {
-            'apikey': serviceKey,
-            'Authorization': `Bearer ${serviceKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation',
-        };
-
-        // Step 1: Try PATCH (update existing row)
-        const patchRes = await axios.patch(
-            `${supabaseUrl}/rest/v1/notification_settings?user_id=eq.${userId}`,
-            updatePayload,
-            { headers }
-        );
-
-        // If row was found and updated, return it
-        if (patchRes.data && patchRes.data.length > 0) {
-            return res.json(patchRes.data[0]);
+        if (error) {
+            console.error('updateNotificationSettings upsert error:', error);
+            throw error;
         }
 
-        // Step 2: No row exists yet — INSERT with defaults
-        const insertPayload = { user_id: userId, ...updatePayload };
-        const postRes = await axios.post(
-            `${supabaseUrl}/rest/v1/notification_settings`,
-            insertPayload,
-            { headers }
-        );
-
-        res.json(postRes.data?.[0] || { success: true });
+        res.json(data);
     } catch (error) {
-        const errDetail = error.response?.data || error.message;
-        console.error('updateNotificationSettings error:', errDetail);
-        res.status(500).json({ message: 'Server Error', detail: JSON.stringify(errDetail) });
+        console.error('updateNotificationSettings error:', error);
+        res.status(500).json({ message: 'Server Error', detail: error.message });
     }
 };
 
