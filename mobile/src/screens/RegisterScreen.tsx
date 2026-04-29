@@ -25,6 +25,7 @@ import { Camera, Image as ImageIcon, FileText, CheckCircle2, Upload, X } from 'l
 import { storageService } from '../services/storage';
 import { authService } from '../services/authService';
 import { Theme } from '../theme';
+import TermsModal from '../components/TermsModal';
 
 
 type RegisterScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Register'>;
@@ -47,6 +48,8 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [selectedRole, setSelectedRole] = useState<'USER' | 'VENDOR'>('USER');
+    const [showTerms, setShowTerms] = useState(false);
+    const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
 
     // Vendor-specific fields (Level 2 & 3)
     const [subCategory, setSubCategory] = useState('');
@@ -312,7 +315,15 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         }
     };
 
-    const handleRegister = async () => {
+    const handleRegister = () => {
+        if (!hasAcceptedTerms) {
+            setShowTerms(true);
+            return;
+        }
+        executeRegister();
+    };
+
+    const executeRegister = async () => {
         // Validation
         if (!name || !email || !password) {
             Alert.alert('Error', 'Please fill in all required fields');
@@ -375,7 +386,11 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         }
     };
 
-
+    const onAcceptTerms = () => {
+        setShowTerms(false);
+        setHasAcceptedTerms(true);
+        executeRegister();
+    };
 
     return (
         <KeyboardAvoidingView
@@ -733,6 +748,13 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                     </View>
                 </TouchableOpacity>
             </Modal>
+
+            <TermsModal
+                visible={showTerms}
+                role={selectedRole}
+                onAccept={onAcceptTerms}
+                onDecline={() => setShowTerms(false)}
+            />
         </KeyboardAvoidingView>
     );
 };

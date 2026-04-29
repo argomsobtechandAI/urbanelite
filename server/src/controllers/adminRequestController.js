@@ -1,4 +1,5 @@
 const supabase = require('../config/database');
+const { sendAdminRequestEmail } = require('../utils/mailer');
 
 // ─── USER: Submit a new admin service request (Others category) ────────────────
 exports.createAdminRequest = async (req, res) => {
@@ -59,6 +60,11 @@ exports.createAdminRequest = async (req, res) => {
             console.error('Admin Request DB Insert Error:', error);
             throw error;
         }
+
+        // Send email notification asynchronously (doesn't block the response)
+        sendAdminRequestEmail(requestData).catch(err => {
+            console.error('Failed to send admin request email:', err);
+        });
 
         res.status(201).json({
             success: true,

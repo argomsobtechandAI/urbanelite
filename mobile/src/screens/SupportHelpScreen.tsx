@@ -15,11 +15,11 @@ const SupportHelpScreen = () => {
     const navigation = useNavigation();
 
     const openWhatsApp = () => {
-        const phone = '+919876543210';
+        const phone = '+918858854373';
         const message = 'Hello OLFIX Support, I need help with...';
         const url = `whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`;
         const webUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-        
+
         Linking.canOpenURL(url).then(supported => {
             if (supported) {
                 Linking.openURL(url);
@@ -56,7 +56,7 @@ const SupportHelpScreen = () => {
                 <View style={styles.contactGrid}>
                     <TouchableOpacity
                         style={styles.contactCard}
-                        onPress={() => Linking.openURL('tel:+919876543210')}
+                        onPress={() => Linking.openURL('tel:+918858854373')}
                     >
                         <View style={[styles.contactIconBox, { backgroundColor: '#E0F2FE' }]}>
                             <Phone size={24} color="#0EA5E9" />
@@ -66,7 +66,7 @@ const SupportHelpScreen = () => {
 
                     <TouchableOpacity
                         style={styles.contactCard}
-                        onPress={() => Linking.openURL('mailto:support@urbanelite.com')}
+                        onPress={() => Linking.openURL('mailto:olfixandaman@gmail.com')}
                     >
                         <View style={[styles.contactIconBox, { backgroundColor: '#F3E8FF' }]}>
                             <Mail size={24} color="#A855F7" />

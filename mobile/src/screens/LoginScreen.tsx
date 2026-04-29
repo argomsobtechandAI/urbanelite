@@ -25,6 +25,7 @@ import {
 } from '@react-native-google-signin/google-signin';
 import { supabase } from '../lib/supabase';
 import { Eye, EyeOff } from 'lucide-react-native';
+import TermsModal from '../components/TermsModal';
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
 
@@ -39,6 +40,9 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     const [loading, setLoading] = useState(false);
     const [selectedRole, setSelectedRole] = useState<'USER' | 'VENDOR'>('USER');
     const [loginError, setLoginError] = useState('');
+    const [showTerms, setShowTerms] = useState(false);
+    const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
+    const [pendingAction, setPendingAction] = useState<'login' | 'google' | null>(null);
 
     useEffect(() => {
         GoogleSignin.configure({
@@ -63,7 +67,16 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         }
     };
 
-    const handleGoogleLogin = async () => {
+    const handleGoogleLogin = () => {
+        if (!hasAcceptedTerms) {
+            setPendingAction('google');
+            setShowTerms(true);
+            return;
+        }
+        executeGoogleLogin();
+    };
+
+    const executeGoogleLogin = async () => {
         try {
             setLoading(true);
             setLoginError('');
@@ -142,7 +155,16 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         }
     };
 
-    const handleLogin = async () => {
+    const handleLogin = () => {
+        if (!hasAcceptedTerms) {
+            setPendingAction('login');
+            setShowTerms(true);
+            return;
+        }
+        executeLogin();
+    };
+
+    const executeLogin = async () => {
         setLoginError('');
         if (!email.trim()) {
             setLoginError('Please enter your email address.');
@@ -201,6 +223,16 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             setLoginError(errorData?.error || error.message || 'Invalid email or password.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const onAcceptTerms = () => {
+        setShowTerms(false);
+        setHasAcceptedTerms(true);
+        if (pendingAction === 'login') {
+            executeLogin();
+        } else if (pendingAction === 'google') {
+            executeGoogleLogin();
         }
     };
 
@@ -335,6 +367,13 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                     </View>
                 </View>
             </ScrollView>
+
+            <TermsModal
+                visible={showTerms}
+                role={selectedRole}
+                onAccept={onAcceptTerms}
+                onDecline={() => setShowTerms(false)}
+            />
         </KeyboardAvoidingView>
     );
 };
