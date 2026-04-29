@@ -405,7 +405,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 <View style={styles.content}>
                     <View style={styles.logoWrapper}>
                         <Image
-                            source={require('../assets/images/wrench_logo.png')}
+                            source={require('../assets/images/logo.png')}
                             style={styles.logoImage}
                             resizeMode="contain"
                         />

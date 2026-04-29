@@ -170,7 +170,7 @@ const HomeScreen = () => {
                         activeOpacity={0.75}
                     >
                         <View style={styles.logoIcon}>
-                            <Image source={require('../assets/images/logo.png')} style={{ width: '100%', height: '100%', borderRadius: 10, resizeMode: 'cover' }} />
+                            <Image source={require('../assets/images/logo.png')} style={{ width: '100%', height: '100%', resizeMode: 'contain' }} />
                         </View>
                         <Text style={styles.headerTitle}>
                             <Text style={styles.titleOlfix}>OLFIX</Text>

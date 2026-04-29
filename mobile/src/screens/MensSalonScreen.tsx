@@ -33,7 +33,7 @@ const MensSalonScreen = () => {
         <View style={styles.header}>
             <TouchableOpacity activeOpacity={0.7} style={styles.logoContainer} onPress={() => navigation.navigate("MainTabs" as any, { screen: "Explore" } as any)}>
                 <View style={styles.logoIcon}>
-                    <Image source={require('../assets/images/logo.png')} style={{ width: '100%', height: '100%', borderRadius: 10, resizeMode: 'cover' }} />
+                    <Image source={require('../assets/images/logo.png')} style={{ width: '100%', height: '100%', resizeMode: 'contain' }} />
                 </View>
                 <Text style={styles.headerTitle}>
                     <Text style={styles.titleOlfix}>OLFIX</Text>

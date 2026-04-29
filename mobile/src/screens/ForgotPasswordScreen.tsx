@@ -81,7 +81,7 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
                 <View style={styles.header}>
                     <View style={styles.logoWrapper}>
                         <Image
-                            source={require('../assets/images/wrench_logo.png')}
+                            source={require('../assets/images/logo.png')}
                             style={styles.logoImage}
                             resizeMode="contain"
                         />
