@@ -5,6 +5,7 @@ import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { Theme } from '../theme';
 import { RootStackParamList } from '../types/navigation';
 import { homeAPI } from '../services/api';
+import NotificationBell from '../components/NotificationBell';
 
 const ElectricianScreen = () => {
     const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -32,22 +33,13 @@ const ElectricianScreen = () => {
         <View style={styles.header}>
             <TouchableOpacity activeOpacity={0.7} style={styles.logoContainer} onPress={() => navigation.navigate("MainTabs" as any, { screen: "Explore" } as any)}>
                 <View style={styles.logoIcon}>
-                    <Text style={styles.logoIconText}>🛠️</Text>
+                    <Image source={require('../assets/images/logo.png')} style={{ width: '100%', height: '100%', borderRadius: 10, resizeMode: 'cover' }} />
                 </View>
                 <Text style={styles.headerTitle}>
                     <Text style={styles.titleOlfix}>OLFIX</Text>
                 </Text>
             </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.notificationButton}
-                onPress={() => navigation.navigate('Notifications')}
-            >
-                <Image
-                    source={{ uri: 'https://cdn-icons-png.flaticon.com/512/3602/3602145.png' }}
-                    style={styles.notificationIcon}
-                />
-                <View style={styles.notificationBadge} />
-            </TouchableOpacity>
+            <NotificationBell navigation={navigation} />
         </View>
     );
 
@@ -163,7 +155,7 @@ const styles = StyleSheet.create({
     // Header
     header: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     logoContainer: { flexDirection: 'row', alignItems: 'center' },
-    logoIcon: { width: 40, height: 40, backgroundColor: Theme.colors.brandOrange, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+    logoIcon: { width: 40, height: 40, backgroundColor: "transparent", borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
     logoIconText: { fontSize: 24, color: 'white' },
     headerTitle: { fontSize: 22, fontWeight: 'bold' },
     titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900', fontStyle: 'italic' },

@@ -13,7 +13,8 @@ const PersonalInformationScreen = () => {
         name: '',
         email: '',
         phone: '',
-        location: ''
+        location: '',
+        profileImageUrl: ''
     });
 
     useFocusEffect(
@@ -68,7 +69,7 @@ const PersonalInformationScreen = () => {
                 <View style={styles.avatarContainer}>
                     <View style={styles.avatarWrapper}>
                         <Image
-                            source={{ uri: 'https://cdn-icons-png.flaticon.com/512/847/847969.png' }}
+                            source={{ uri: userData.profileImageUrl || 'https://cdn-icons-png.flaticon.com/512/847/847969.png' }}
                             style={styles.avatar}
                         />
                         <TouchableOpacity style={styles.cameraButton}>

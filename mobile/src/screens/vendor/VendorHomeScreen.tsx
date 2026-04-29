@@ -83,7 +83,12 @@ const VendorHomeScreen = () => {
                         onPress={() => navigation.navigate('VendorTabs' as any, { screen: 'Dashboard' } as any)}
                         activeOpacity={0.75}
                     >
-                        <Image source={LOGO_IMG} style={styles.headerLogo} resizeMode="contain" />
+                        <View style={styles.logoIcon}>
+                            <Image source={LOGO_IMG} style={{ width: '100%', height: '100%', borderRadius: 10, resizeMode: 'cover' }} />
+                        </View>
+                        <Text style={styles.headerTitle}>
+                            <Text style={styles.titleOlfix}>OLFIX</Text>
+                        </Text>
                     </TouchableOpacity>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <NotificationBell navigation={navigation} />
@@ -176,8 +181,9 @@ const getStatusColor = (status: string) => {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: Theme.colors.background },
     header: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    logoContainer: { flexDirection: 'row', alignItems: 'center' },
-    headerLogo: { width: 100, height: 45 },
+    logoIcon: { width: 40, height: 40, backgroundColor: "transparent", borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+    headerTitle: { fontSize: 24, fontWeight: Theme.typography.weights.bold },
+    titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900', fontStyle: 'italic', letterSpacing: -0.5 },
     notificationButton: { width: 40, height: 40, backgroundColor: Theme.colors.searchBg, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
     notificationBadge: { width: 8, height: 8, backgroundColor: Theme.colors.primary, borderRadius: 4, position: 'absolute', top: 10, right: 10, borderWidth: 1, borderColor: '#FFF' },
 

@@ -21,13 +21,24 @@ const getUserProfile = async (req, res) => {
         let calculatedBalance = 0;
 
         transactions.forEach(tx => {
-            // Clean amount string: remove everything except digits, minus, and dot
             const cleanAmount = String(tx.amount).replace(/[^0-9.-]+/g, "");
             const val = parseFloat(cleanAmount) || 0;
 
             if (tx.type === 'credit') calculatedBalance += val;
             else if (tx.type === 'debit') calculatedBalance -= val;
         });
+
+        // Fetch Stats
+        // 1. Completed Bookings
+        const { count: completedBookings } = await supabase
+            .from('bookings')
+            .select('*', { count: 'exact', head: true })
+            .eq(user.role === 'VENDOR' ? 'vendor_id' : 'user_id', req.user.id)
+            .eq('status', 'COMPLETED');
+
+        // 2. Rating (already in users table as average_rating, or calculated from ratings table)
+        const rating = user.average_rating || 5.0;
+        const ratingCount = user.rating_count || 0;
 
         res.json({
             name: user.name,
@@ -37,7 +48,11 @@ const getUserProfile = async (req, res) => {
             isPremium: user.is_premium,
             walletBalance: `₹${calculatedBalance.toFixed(2)}`,
             profileImageUrl: user.profile_image_url || null,
-            certificationDocs: user.certification_docs || []
+            certificationDocs: user.certification_docs || [],
+            completedBookings: completedBookings || 0,
+            rating: rating,
+            ratingCount: ratingCount,
+            role: user.role
         });
     } catch (error) {
         console.error(error);

@@ -138,9 +138,18 @@ const VendorProfileScreen = () => {
                 {/* Header */}
                 <View style={styles.header}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <View style={styles.logoContainer}>
-                            <Image source={LOGO_IMG} style={styles.headerLogo} resizeMode="contain" />
-                        </View>
+                        <TouchableOpacity
+                            style={styles.logoContainer}
+                            onPress={() => navigation.navigate('VendorTabs' as any, { screen: 'Dashboard' } as any)}
+                            activeOpacity={0.75}
+                        >
+                            <View style={styles.logoIcon}>
+                                <Image source={LOGO_IMG} style={{ width: '100%', height: '100%', borderRadius: 10, resizeMode: 'cover' }} />
+                            </View>
+                            <Text style={styles.headerTitle}>
+                                <Text style={styles.titleOlfix}>OLFIX</Text>
+                            </Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -172,12 +181,12 @@ const VendorProfileScreen = () => {
                     {/* Stats */}
                     <View style={styles.statsContainer}>
                         <View style={styles.statItem}>
-                            <Text style={styles.statValue}>4.8</Text>
+                            <Text style={styles.statValue}>{profile?.rating?.toFixed(1) || '5.0'}</Text>
                             <Text style={styles.statLabel}>Rating</Text>
                         </View>
                         <View style={styles.statDivider} />
                         <View style={styles.statItem}>
-                            <Text style={styles.statValue}>127</Text>
+                            <Text style={styles.statValue}>{profile?.completedBookings || '0'}</Text>
                             <Text style={styles.statLabel}>Completed</Text>
                         </View>
                     </View>
@@ -215,8 +224,9 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: Theme.colors.background },
 
     header: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 20 },
-    logoContainer: { flexDirection: 'row', alignItems: 'center' },
-    headerLogo: { width: 100, height: 45 },
+    logoIcon: { width: 40, height: 40, backgroundColor: "transparent", borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+    headerTitle: { fontSize: 24, fontWeight: 'bold' },
+    titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900', fontStyle: 'italic', letterSpacing: -0.5 },
 
     contentContainer: { paddingHorizontal: 20 },
 

@@ -170,7 +170,7 @@ const HomeScreen = () => {
                         activeOpacity={0.75}
                     >
                         <View style={styles.logoIcon}>
-                            <Text style={styles.logoIconText}>🛠️</Text>
+                            <Image source={require('../assets/images/logo.png')} style={{ width: '100%', height: '100%', borderRadius: 10, resizeMode: 'cover' }} />
                         </View>
                         <Text style={styles.headerTitle}>
                             <Text style={styles.titleOlfix}>OLFIX</Text>
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     logoContainer: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-    logoIcon: { width: 40, height: 40, backgroundColor: Theme.colors.primary, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+    logoIcon: { width: 40, height: 40, backgroundColor: "transparent", borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
     logoIconText: { fontSize: 24 },
     headerTitle: { fontSize: 24, fontWeight: Theme.typography.weights.bold },
     titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900', fontStyle: 'italic', letterSpacing: -0.5 },

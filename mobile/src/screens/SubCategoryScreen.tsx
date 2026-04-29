@@ -6,6 +6,7 @@ import { Theme } from '../theme';
 import { RootStackParamList } from '../types/navigation';
 import { homeAPI } from '../services/api';
 import { Bell, Search, ArrowLeft, X } from 'lucide-react-native';
+import NotificationBell from '../components/NotificationBell';
 
 type SubCategoryRouteProp = RouteProp<RootStackParamList, 'SubCategory'>;
 
@@ -102,7 +103,7 @@ const SubCategoryScreen = () => {
                 {!searchOpen && (
                     <TouchableOpacity activeOpacity={0.7} style={styles.logoContainer} onPress={() => navigation.navigate("MainTabs" as any, { screen: "Explore" } as any)}>
                         <View style={styles.logoIcon}>
-                            <Text style={styles.logoIconText}>🛠️</Text>
+                            <Image source={require('../assets/images/logo.png')} style={{ width: '100%', height: '100%', borderRadius: 10, resizeMode: 'cover' }} />
                         </View>
                         <Text style={styles.headerTitle}>
                             <Text style={styles.titleOlfix}>OLFIX</Text>
@@ -139,13 +140,7 @@ const SubCategoryScreen = () => {
                     </TouchableOpacity>
 
                     {!searchOpen && (
-                        <TouchableOpacity
-                            style={styles.iconButton}
-                            onPress={() => navigation.navigate('Notifications')}
-                        >
-                            <Bell size={22} color={Theme.colors.textDark} />
-                            <View style={styles.notificationBadge} />
-                        </TouchableOpacity>
+                        <NotificationBell navigation={navigation} />
                     )}
                 </View>
             </View>
@@ -199,10 +194,10 @@ const styles = StyleSheet.create({
         height: 60,
     },
     logoContainer: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-    logoIcon: { width: 40, height: 40, backgroundColor: Theme.colors.primary, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+    logoIcon: { width: 40, height: 40, backgroundColor: "transparent", borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
     logoIconText: { fontSize: 24 },
     headerTitle: { fontSize: 24, fontWeight: Theme.typography.weights.bold },
-    titleOlfix: { color: Theme.colors.navy, fontWeight: '900', letterSpacing: -0.5 },
+    titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900', letterSpacing: -0.5 },
 
     headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     iconButton: {

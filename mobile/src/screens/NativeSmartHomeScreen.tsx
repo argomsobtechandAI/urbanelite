@@ -5,6 +5,7 @@ import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { Theme } from '../theme';
 import { RootStackParamList } from '../types/navigation';
 import { homeAPI } from '../services/api';
+import NotificationBell from '../components/NotificationBell';
 
 const NativeSmartHomeScreen = () => {
     const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -44,16 +45,7 @@ const NativeSmartHomeScreen = () => {
                     <Text style={styles.titleOlfix}>OLFIX</Text>
                 </Text>
             </TouchableOpacity>
-            <TouchableOpacity
-                style={styles.notificationButton}
-                onPress={() => navigation.navigate('Notifications')}
-            >
-                <Image
-                    source={{ uri: 'https://cdn-icons-png.flaticon.com/512/3602/3602145.png' }}
-                    style={styles.notificationIcon}
-                />
-                <View style={styles.notificationBadge} />
-            </TouchableOpacity>
+            <NotificationBell navigation={navigation} />
         </View>
     );
 

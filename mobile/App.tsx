@@ -8,7 +8,7 @@ import { authService } from './src/services/authService';
 import SplashScreen from './src/screens/SplashScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
-import NotificationScreen from './src/screens/NotificationScreen';
+import NotificationsScreen from './src/screens/NotificationsScreen';
 import InstaHelpScreen from './src/screens/InstaHelpScreen';
 import WomensSalonScreen from './src/screens/WomensSalonScreen';
 import MensSalonScreen from './src/screens/MensSalonScreen';
@@ -91,7 +91,7 @@ export const RootNavigator = () => {
       <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       <Stack.Screen name="MainTabs" component={TabNavigator} />
       <Stack.Screen name="VendorTabs" component={VendorTabNavigator} />
-      <Stack.Screen name="Notifications" component={NotificationScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="InstaHelp" component={InstaHelpScreen} />
       <Stack.Screen name="WomensSalon" component={WomensSalonScreen} />
       <Stack.Screen name="MensSalon" component={MensSalonScreen} />
