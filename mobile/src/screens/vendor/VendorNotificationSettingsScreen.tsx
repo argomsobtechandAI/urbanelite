@@ -20,9 +20,9 @@ const VendorNotificationSettingsScreen = () => {
     // Maps UI key -> actual DB column name
     const MAPPING: { [key: string]: string } = {
         bookingUpdates: 'booking_updates',
-        offers: 'offers',
-        reminders: 'reminders',
-        security: 'security',
+        offers: 'offers_promotions',
+        reminders: 'service_reminders',
+        security: 'account_security',
         newLeads: 'new_leads',
         payouts: 'payouts'
     };

@@ -384,7 +384,7 @@ const updateNotificationSettings = async (req, res) => {
 
         // Actual column names in the notification_settings table
         const ALLOWED_COLS = [
-            'booking_updates', 'offers', 'reminders', 'security',
+            'booking_updates', 'offers_promotions', 'service_reminders', 'account_security',
             'new_leads', 'payouts'
         ];
 

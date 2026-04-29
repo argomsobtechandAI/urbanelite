@@ -15,7 +15,7 @@ const VendorSupportHelpScreen = () => {
     const navigation = useNavigation();
 
     const openWhatsApp = () => {
-        const phone = '+919999999999';
+        const phone = '+918858854373';
         const message = 'Hello Olfix Support, I am a partner and I need help regarding...';
         const url = `whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`;
         
@@ -64,14 +64,14 @@ const VendorSupportHelpScreen = () => {
                 <Text style={[styles.sectionTitle, { marginTop: 30 }]}>Other Ways to Reach Us</Text>
 
                 <View style={styles.contactGrid}>
-                    <TouchableOpacity style={styles.contactCard} onPress={() => Linking.openURL('tel:+919999999999')}>
+                    <TouchableOpacity style={styles.contactCard} onPress={() => Linking.openURL('tel:+918858854373')}>
                         <View style={[styles.contactIconBox, { backgroundColor: '#E0F2FE' }]}>
                             <Phone size={24} color="#0EA5E9" />
                         </View>
                         <Text style={styles.contactLabel}>Call Support</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.contactCard} onPress={() => Linking.openURL('mailto:support@olfix.in')}>
+                    <TouchableOpacity style={styles.contactCard} onPress={() => Linking.openURL('mailto:olfixandaman@gmail.com')}>
                         <View style={[styles.contactIconBox, { backgroundColor: '#F3E8FF' }]}>
                             <Mail size={24} color="#A855F7" />
                         </View>
