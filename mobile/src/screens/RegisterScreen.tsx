@@ -13,6 +13,7 @@ import {
     Modal,
     FlatList,
     PermissionsAndroid,
+    Image,
 } from 'react-native';
 const RNAndroidLocationEnabler = require('react-native-android-location-enabler').default || require('react-native-android-location-enabler');
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -402,6 +403,13 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 showsVerticalScrollIndicator={false}
             >
                 <View style={styles.content}>
+                    <View style={styles.logoWrapper}>
+                        <Image
+                            source={require('../assets/images/wrench_logo.png')}
+                            style={styles.logoImage}
+                            resizeMode="contain"
+                        />
+                    </View>
                     <Text style={styles.title}>Create Account</Text>
                     <Text style={styles.subtitle}>Sign up to get started</Text>
 
@@ -770,6 +778,14 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         padding: 24,
+    },
+    logoWrapper: {
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    logoImage: {
+        width: 80,
+        height: 80,
     },
     title: {
         fontSize: 32,

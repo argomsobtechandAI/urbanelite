@@ -10,6 +10,7 @@ import {
     KeyboardAvoidingView,
     Platform,
     ActivityIndicator,
+    Image,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
@@ -78,6 +79,13 @@ const ForgotPasswordScreen = ({ navigation }: any) => {
                 </TouchableOpacity>
 
                 <View style={styles.header}>
+                    <View style={styles.logoWrapper}>
+                        <Image
+                            source={require('../assets/images/wrench_logo.png')}
+                            style={styles.logoImage}
+                            resizeMode="contain"
+                        />
+                    </View>
                     <Text style={styles.title}>Forgot Password?</Text>
                     <Text style={styles.subtitle}>
                         Enter your email address and we'll send you an OTP to reset your password.
@@ -138,6 +146,14 @@ const styles = StyleSheet.create({
     },
     header: {
         marginBottom: 40,
+    },
+    logoWrapper: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    logoImage: {
+        width: 80,
+        height: 80,
     },
     title: {
         fontSize: 32,

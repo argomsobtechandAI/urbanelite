@@ -11,6 +11,7 @@ import {
     Platform,
     PermissionsAndroid,
     ScrollView,
+    Image,
 } from 'react-native';
 const RNAndroidLocationEnabler = require('react-native-android-location-enabler').default || require('react-native-android-location-enabler');
 import Svg, { Path } from 'react-native-svg';
@@ -243,6 +244,13 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         >
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <View style={styles.content}>
+                    <View style={styles.logoWrapper}>
+                        <Image
+                            source={require('../assets/images/wrench_logo.png')}
+                            style={styles.logoImage}
+                            resizeMode="contain"
+                        />
+                    </View>
                     <Text style={styles.title}>Welcome Back</Text>
                     <Text style={styles.subtitle}>Sign in to continue</Text>
 
@@ -385,6 +393,14 @@ const styles = StyleSheet.create({
     title: { fontSize: 32, fontWeight: 'bold', color: Theme.colors.textDark, marginBottom: 8 },
     subtitle: { fontSize: 16, color: Theme.colors.textLight, marginBottom: 32 },
     form: { width: '100%' },
+    logoWrapper: {
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    logoImage: {
+        width: 80,
+        height: 80,
+    },
 
     roleSelector: {
         flexDirection: 'row',
