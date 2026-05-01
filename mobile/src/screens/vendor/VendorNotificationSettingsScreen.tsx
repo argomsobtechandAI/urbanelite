@@ -55,14 +55,23 @@ const VendorNotificationSettingsScreen = () => {
     const toggleSwitch = async (key: string, value: boolean) => {
         const backendKey = MAPPING[key] || key;
         const newSettings = { ...settings, [key]: value };
+        
+        // Special case: New Leads & Offers might want to update both in backend
+        const updateData: any = { [backendKey]: value };
+        if (key === 'newLeads') {
+            updateData['offers_promotions'] = value;
+        }
+
         setSettings(newSettings);
         try {
-            await userAPI.updateNotificationSettings({ [backendKey]: value });
-        } catch (error) {
+            await userAPI.updateNotificationSettings(updateData);
+        } catch (error: any) {
             console.error('Failed to update setting:', error);
-            // Optionally revert local state if update fails
+            // Revert local state if update fails
             setSettings(prev => ({ ...prev, [key]: !value }));
-            Alert.alert('Error', 'Failed to update notification settings');
+            
+            const errorMsg = error.response?.data?.detail || error.message || 'Unknown error';
+            Alert.alert('Error', `Failed to update notification settings: ${errorMsg}`);
         }
     };
 
