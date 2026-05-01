@@ -1,4 +1,4 @@
-import { ArrowLeft, Bell, Tag, ShieldCheck, IndianRupee } from 'lucide-react-native';
+import { ArrowLeft, Bell, Tag, IndianRupee } from 'lucide-react-native';
 import { Theme } from '../../theme';
 import { userAPI } from '../../services/api';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -12,7 +12,6 @@ const VendorNotificationSettingsScreen = () => {
         bookingUpdates: true,
         offers: true,
         reminders: true,
-        security: true,
         newLeads: true,
         payouts: true
     });
@@ -22,7 +21,6 @@ const VendorNotificationSettingsScreen = () => {
         bookingUpdates: 'booking_updates',
         offers: 'offers_promotions',
         reminders: 'service_reminders',
-        security: 'account_security',
         newLeads: 'new_leads',
         payouts: 'payouts'
     };
@@ -133,13 +131,6 @@ const VendorNotificationSettingsScreen = () => {
                     color="#0EA5E9"
                 />
 
-                <SettingItem
-                    icon={<ShieldCheck />}
-                    title="Account Security"
-                    description="Alerts for new logins and password changes"
-                    value={settings.security}
-                    onValueChange={(val: boolean) => toggleSwitch('security', val)}
-                    color="#F59E0B"
                 />
             </View>
         </SafeAreaView>
