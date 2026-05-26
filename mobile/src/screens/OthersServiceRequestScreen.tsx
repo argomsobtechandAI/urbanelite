@@ -92,7 +92,7 @@ const OthersServiceRequestScreen = () => {
     return (
         <KeyboardAvoidingView
             style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
             <SafeAreaView style={styles.safeArea} edges={['top']}>
                 {/* Header */}

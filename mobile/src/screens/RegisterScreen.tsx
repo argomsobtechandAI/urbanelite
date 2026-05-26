@@ -87,14 +87,11 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                     interval: 10000,
                     fastInterval: 5000,
                 });
-                const granted = await PermissionsAndroid.request(
+                await PermissionsAndroid.request(
                     PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
                 );
-                if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-                    checkLocation();
-                }
             } catch (err) {
-                checkLocation();
+                console.warn('Location permission/enabler error:', err);
             }
         }
     };
@@ -396,7 +393,7 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
     return (
         <KeyboardAvoidingView
             style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
