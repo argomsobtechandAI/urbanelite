@@ -373,12 +373,12 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
 
             const successMessage = data.requiresApproval
                 ? 'Vendor registration successful! Admin approval pending.'
-                : 'Account created successfully! Please login.';
-
+                : 'Account created successfully! Please login.'
             Alert.alert('Success', successMessage, [{ text: 'OK', onPress: () => navigation.navigate('Login') }]);
         } catch (error: any) {
             console.error('Registration error:', error);
-            Alert.alert('Registration Failed', error.message || 'An error occurred.');
+            const errorMessage = error.response?.data?.error || error.message || 'An error occurred.';
+            Alert.alert('Registration Failed', errorMessage);
         } finally {
             setLoading(false);
         }
