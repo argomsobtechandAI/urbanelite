@@ -7,14 +7,16 @@ SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
 # Database Connection
-# NOTE: This is likely INCORRECT because we don't know the proper region (aws-0-ap-south-1 is a guess).
-# Please replace with the URI from Dashboard > Settings > Database.
+# NOTE: Replace with the URI from Dashboard > Settings > Database.
 DATABASE_URL=
 JWT_SECRET=
 CASHFREE_APP_ID=
 CASHFREE_SECRET_KEY=
 CASHFREE_ENV=
+
+# Google OAuth Configuration
 GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
 
 # Email Configuration
 SMTP_USER=
