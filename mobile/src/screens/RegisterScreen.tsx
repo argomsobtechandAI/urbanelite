@@ -102,10 +102,13 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             const response = await serviceAPI.getCategories();
             if (response.data.success) {
                 setCategories(response.data.categories);
+            } else {
+                Alert.alert('Error', response.data.error || 'Failed to load service categories');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching categories:', error);
-            // Fallback removed, rely on API
+            const errMsg = error.response?.data?.error || error.message || 'Failed to connect to the server';
+            Alert.alert('Network Error', `Could not fetch categories: ${errMsg}`);
         } finally {
             setLoadingCategories(false);
         }
@@ -120,9 +123,13 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             const response = await serviceAPI.getSubCategories(categoryId);
             if (response.data.success) {
                 setSubCategories(response.data.subcategories);
+            } else {
+                Alert.alert('Error', response.data.error || 'Failed to load sub-categories');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching subcategories:', error);
+            const errMsg = error.response?.data?.error || error.message || 'Failed to connect to the server';
+            Alert.alert('Network Error', `Could not fetch sub-categories: ${errMsg}`);
         } finally {
             setLoadingSubCategories(false);
         }
@@ -135,9 +142,13 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             const response = await serviceAPI.getServiceItems(subCatId);
             if (response.data.success) {
                 setAvailableServices(response.data.services);
+            } else {
+                Alert.alert('Error', response.data.error || 'Failed to load services');
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching services:', error);
+            const errMsg = error.response?.data?.error || error.message || 'Failed to connect to the server';
+            Alert.alert('Network Error', `Could not fetch services: ${errMsg}`);
         } finally {
             setLoadingServices(false);
         }
@@ -625,6 +636,13 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                         <FlatList
                             data={categories}
                             keyExtractor={(item) => item.id}
+                            ListEmptyComponent={
+                                <View style={styles.emptyContainer}>
+                                    <Text style={styles.emptyText}>
+                                        {loadingCategories ? 'Loading categories...' : 'No categories available. Please check your network.'}
+                                    </Text>
+                                </View>
+                            }
                             renderItem={({ item }) => (
                                 <TouchableOpacity
                                     style={styles.dropdownItem}
@@ -664,6 +682,13 @@ const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                         <FlatList
                             data={subCategories}
                             keyExtractor={(item) => item.id}
+                            ListEmptyComponent={
+                                <View style={styles.emptyContainer}>
+                                    <Text style={styles.emptyText}>
+                                        {loadingSubCategories ? 'Loading sub-categories...' : 'No sub-categories available.'}
+                                    </Text>
+                                </View>
+                            }
                             renderItem={({ item }) => (
                                 <TouchableOpacity
                                     style={styles.dropdownItem}
@@ -1085,6 +1110,16 @@ const styles = StyleSheet.create({
     serviceItemText: {
         fontSize: 14,
         color: Theme.colors.textDark,
+    },
+    emptyContainer: {
+        padding: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyText: {
+        fontSize: 14,
+        color: '#64748B',
+        textAlign: 'center',
     },
 });
 

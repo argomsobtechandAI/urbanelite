@@ -36,14 +36,28 @@ exports.register = async (req, res) => {
             }
         }
 
-        const { data: existingUser } = await supabase
+        // Check if user with this email already exists
+        const { data: existingUserEmail } = await supabase
             .from('users')
             .select('id')
             .eq('email', email)
-            .single();
+            .maybeSingle();
 
-        if (existingUser) {
+        if (existingUserEmail) {
             return res.status(400).json({ success: false, error: 'User with this email already exists' });
+        }
+
+        // Check if user with this phone number already exists
+        if (phone) {
+            const { data: existingUserPhone } = await supabase
+                .from('users')
+                .select('id')
+                .eq('phone', phone)
+                .maybeSingle();
+
+            if (existingUserPhone) {
+                return res.status(400).json({ success: false, error: 'User with this phone number already exists' });
+            }
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);

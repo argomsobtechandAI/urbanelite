@@ -224,6 +224,7 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: Theme.colors.background },
 
     header: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 20 },
+    logoContainer: { flexDirection: 'row', alignItems: 'center' },
     logoIcon: { width: 40, height: 40, backgroundColor: "transparent", borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
     headerTitle: { fontSize: 24, fontWeight: 'bold' },
     titleOlfix: { color: Theme.colors.brandOrange, fontWeight: '900', fontStyle: 'italic', letterSpacing: -0.5 },

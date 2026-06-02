@@ -5,7 +5,23 @@ import { authService } from './authService';
 import { API_URL } from '@env';
 
 // Use API_URL from .env for production, fallback to 10.0.2.2 for emulator
-const BASE_URL = API_URL || 'http://10.0.2.2:3000';
+let BASE_URL = API_URL || 'http://10.0.2.2:3000';
+
+// Ensure the URL has a protocol (http:// or https://)
+if (BASE_URL && !BASE_URL.startsWith('http://') && !BASE_URL.startsWith('https://')) {
+    const lowerUrl = BASE_URL.toLowerCase();
+    if (
+        lowerUrl.includes('localhost') || 
+        lowerUrl.includes('127.0.0.1') || 
+        lowerUrl.includes('10.0.2.2') || 
+        lowerUrl.startsWith('192.168.') ||
+        lowerUrl.startsWith('10.')
+    ) {
+        BASE_URL = `http://${BASE_URL}`;
+    } else {
+        BASE_URL = `https://${BASE_URL}`;
+    }
+}
 
 const api = axios.create({
     baseURL: BASE_URL,

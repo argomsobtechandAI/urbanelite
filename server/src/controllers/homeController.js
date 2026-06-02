@@ -31,14 +31,17 @@ const getServiceCategories = async (req, res) => {
     try {
         const { data: categories, error } = await supabase
             .from('service_categories')
-            .select('*')
-            .or('is_others.is.null,is_others.eq.false'); // Exclude Others category from vendor signup
+            .select('*');
 
         if (error) throw error;
 
+        const filteredCategories = (categories || []).filter(
+            cat => cat.is_others !== true && cat.slug !== 'others'
+        );
+
         res.json({
             success: true,
-            categories: categories
+            categories: filteredCategories
         });
     } catch (error) {
         console.error('Error fetching categories:', error);

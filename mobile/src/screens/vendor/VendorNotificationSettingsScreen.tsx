@@ -130,8 +130,6 @@ const VendorNotificationSettingsScreen = () => {
                     onValueChange={(val: boolean) => toggleSwitch('payouts', val)}
                     color="#0EA5E9"
                 />
-
-                />
             </View>
         </SafeAreaView>
     );
