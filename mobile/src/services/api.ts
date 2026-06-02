@@ -120,6 +120,7 @@ export const userAPI = {
 
     getNotificationSettings: () => api.get('/api/user/notifications/settings'),
     updateNotificationSettings: (data: any) => api.put('/api/user/notifications/settings', data),
+    deleteAccount: () => api.delete('/api/user/delete-account'),
 };
 
 export const bookingAPI = {

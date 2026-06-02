@@ -56,6 +56,35 @@ const ProfileScreen = () => {
         });
     };
 
+    const handleDeleteAccount = () => {
+        Alert.alert(
+            'Delete Account',
+            'Are you sure you want to permanently delete your account? This action is irreversible and all your data (wallet, bookings, profile) will be deleted.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete Permanently',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            setLoading(true);
+                            await userAPI.deleteAccount();
+                            await authService.clearAuth();
+                            Alert.alert('Account Deleted', 'Your account has been deleted successfully.');
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: 'Login' as any }],
+                            });
+                        } catch (error: any) {
+                            Alert.alert('Error', error.response?.data?.error || 'Failed to delete account. Please try again.');
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     const requestCameraPermission = async (): Promise<boolean> => {
         if (Platform.OS !== 'android') return true;
         try {
@@ -73,6 +102,7 @@ const ProfileScreen = () => {
             return false;
         }
     };
+
 
     const handleChangePhoto = () => {
         Alert.alert('Change Profile Photo', 'Choose an option', [
@@ -201,6 +231,11 @@ const ProfileScreen = () => {
                         <Text style={styles.logoutText}>Logout Account</Text>
                     </TouchableOpacity>
 
+                    {/* Delete Account Button */}
+                    <TouchableOpacity style={styles.deleteAccountButton} onPress={handleDeleteAccount}>
+                        <Text style={styles.deleteAccountText}>Delete Account</Text>
+                    </TouchableOpacity>
+
                     {/* Bottom Spacer */}
                     <View style={{ height: 100 }} />
                 </View>
@@ -276,6 +311,11 @@ const styles = StyleSheet.create({
     // Logout
     logoutButton: { paddingVertical: 18, borderRadius: 20, borderWidth: 1, borderColor: '#FEE2E2', alignItems: 'center', backgroundColor: '#FFF5F5' },
     logoutText: { color: '#EF4444', fontSize: 16, fontWeight: 'bold', letterSpacing: 0.5 },
+
+    // Delete Account
+    deleteAccountButton: { paddingVertical: 18, borderRadius: 20, borderWidth: 1, borderColor: '#FCA5A5', alignItems: 'center', backgroundColor: '#FEF2F2', marginTop: 15 },
+    deleteAccountText: { color: '#DC2626', fontSize: 16, fontWeight: 'bold', letterSpacing: 0.5 },
 });
+
 
 export default ProfileScreen;

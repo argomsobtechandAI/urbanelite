@@ -7,7 +7,8 @@ const {
     getUserBookings,
     getAddresses, addAddress, deleteAddress,
     getPaymentMethods, addPaymentMethod, deletePaymentMethod,
-    getNotificationSettings, updateNotificationSettings
+    getNotificationSettings, updateNotificationSettings,
+    deleteAccount
 } = require('../controllers/userController');
 const {
     getUserNotifications,
@@ -25,6 +26,8 @@ router.use(authMiddleware);
 // Profile
 router.get('/profile', getUserProfile);
 router.put('/profile', updateProfile);
+router.delete('/delete-account', deleteAccount);
+
 
 // Wallet
 router.get('/wallet', getUserWallet);

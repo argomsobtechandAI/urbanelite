@@ -12,6 +12,8 @@ import { Camera } from 'lucide-react-native';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import { storageService } from '../../services/storage';
 
+import { authService } from '../../services/authService';
+
 const LOGO_IMG = require('../../assets/images/logo.png');
 
 const MENU_ITEMS = [
@@ -47,14 +49,45 @@ const VendorProfileScreen = () => {
         }
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await authService.clearAuth();
         navigation.reset({
             index: 0,
             routes: [{ name: 'Login' }],
         });
     };
 
+    const handleDeleteAccount = () => {
+        Alert.alert(
+            'Delete Account',
+            'Are you sure you want to permanently delete your vendor account? This action is irreversible and all your business data, services, bookings, and profile will be deleted.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete Permanently',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            setLoading(true);
+                            await userAPI.deleteAccount();
+                            await authService.clearAuth();
+                            Alert.alert('Account Deleted', 'Your account has been deleted successfully.');
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: 'Login' }],
+                            });
+                        } catch (error: any) {
+                            Alert.alert('Error', error.response?.data?.error || 'Failed to delete account. Please try again.');
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     const requestCameraPermission = async (): Promise<boolean> => {
+
         if (Platform.OS !== 'android') return true;
         try {
             const granted = await PermissionsAndroid.request(
@@ -213,6 +246,11 @@ const VendorProfileScreen = () => {
                         <Text style={styles.logoutText}>Logout Account</Text>
                     </TouchableOpacity>
 
+                    {/* Delete Account Button */}
+                    <TouchableOpacity style={styles.deleteAccountButton} onPress={handleDeleteAccount}>
+                        <Text style={styles.deleteAccountText}>Delete Account</Text>
+                    </TouchableOpacity>
+
                     <View style={{ height: 100 }} />
                 </View>
             </ScrollView>
@@ -286,6 +324,10 @@ const styles = StyleSheet.create({
 
     logoutButton: { paddingVertical: 18, borderRadius: 20, borderWidth: 1, borderColor: '#FED7D7', alignItems: 'center', backgroundColor: '#FFF5F5' },
     logoutText: { color: '#F56565', fontSize: 16, fontWeight: 'bold', letterSpacing: 0.5 },
+
+    // Delete Account
+    deleteAccountButton: { paddingVertical: 18, borderRadius: 20, borderWidth: 1, borderColor: '#FCA5A5', alignItems: 'center', backgroundColor: '#FEF2F2', marginTop: 15 },
+    deleteAccountText: { color: '#DC2626', fontSize: 16, fontWeight: 'bold', letterSpacing: 0.5 },
 });
 
 export default VendorProfileScreen;

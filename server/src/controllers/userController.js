@@ -446,11 +446,49 @@ const getUserBookings = async (req, res) => {
     }
 };
 
+// Delete Account
+const deleteAccount = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        console.log(`[DELETE ACCOUNT] Attempting to delete account for userId: ${userId}`);
+
+        // Delete dependencies first
+        await supabase.from('notification_settings').delete().eq('user_id', userId);
+        await supabase.from('addresses').delete().eq('user_id', userId);
+        await supabase.from('payment_methods').delete().eq('user_id', userId);
+        await supabase.from('vendor_services').delete().eq('vendor_id', userId);
+        await supabase.from('transactions').delete().eq('user_id', userId);
+        await supabase.from('messages').delete().or(`sender_id.eq.${userId},receiver_id.eq.${userId}`);
+        await supabase.from('bookings').delete().or(`user_id.eq.${userId},vendor_id.eq.${userId}`);
+        await supabase.from('ratings').delete().or(`reviewer_id.eq.${userId},reviewed_id.eq.${userId}`);
+        await supabase.from('reports').delete().or(`reporter_id.eq.${userId},reported_id.eq.${userId}`);
+        await supabase.from('admin_service_requests').delete().eq('user_id', userId);
+
+        // Delete user
+        const { error } = await supabase
+            .from('users')
+            .delete()
+            .eq('id', userId);
+
+        if (error) {
+            console.error('Error deleting user record:', error);
+            throw error;
+        }
+
+        res.json({ success: true, message: 'Account deleted successfully' });
+    } catch (error) {
+        console.error('deleteAccount error:', error);
+        res.status(500).json({ success: false, error: 'Failed to delete account', detail: error.message });
+    }
+};
+
 module.exports = {
     getUserProfile, updateProfile,
     getUserWallet, topupWallet, getWalletTransactions,
     getUserBookings,
     getAddresses, addAddress, deleteAddress,
     getPaymentMethods, addPaymentMethod, deletePaymentMethod,
-    getNotificationSettings, updateNotificationSettings
+    getNotificationSettings, updateNotificationSettings,
+    deleteAccount
 };
+

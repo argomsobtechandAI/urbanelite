@@ -1,7 +1,9 @@
 const axios = require('axios');
 const dotenv = require('dotenv');
+const path = require('path');
 
-dotenv.config();
+// Robustly load .env relative to this file
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID;
 const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY;
@@ -16,15 +18,28 @@ const supabase = require('../config/database');
 const createOrder = async (req, res) => {
     try {
         console.log('=== CREATE ORDER DEBUG ===');
+        console.log('CASHFREE_ENV:', CASHFREE_ENV);
+        console.log('CASHFREE_APP_ID:', CASHFREE_APP_ID ? `${CASHFREE_APP_ID.substring(0, 8)}...` : 'NOT SET');
+        console.log('CASHFREE_SECRET_KEY:', CASHFREE_SECRET_KEY ? 'SET (hidden)' : 'NOT SET');
         console.log('req.user:', req.user);
         console.log('req.body:', req.body);
+
+        if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+            console.error('=== ERROR: Cashfree API keys are not configured in environment ===');
+            return res.status(500).json({
+                message: 'Failed to create order',
+                error: {
+                    message: 'Cashfree API credentials are not configured on the server. Please set CASHFREE_APP_ID and CASHFREE_SECRET_KEY.',
+                    code: 'config_missing',
+                    type: 'config_error'
+                }
+            });
+        }
 
         const { orderAmount, orderCurrency, customerId, customerPhone, customerName, customerEmail } = req.body;
         const userId = req.user?.id; // authMiddleware adds this as req.user.id
 
         console.log('Extracted userId:', userId);
-        console.log('CASHFREE_APP_ID:', CASHFREE_APP_ID ? 'SET' : 'NOT SET');
-        console.log('CASHFREE_SECRET_KEY:', CASHFREE_SECRET_KEY ? 'SET' : 'NOT SET');
 
         const orderId = `ORDER_${Date.now()}`;
         const requestData = {
